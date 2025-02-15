@@ -1,8 +1,9 @@
 import pandas as pd
 import urllib.parse
 
+input_dir = './data/'
 # Load the Excel file
-file_path = "Sorted_DIRECTV_Channel_Lineup.xlsx"  # Update with your file path
+file_path = input_dir + "Sorted_DIRECTV_Channel_Lineup.xlsx"  # Update with your file path
 xls = pd.ExcelFile(file_path)
 
 # Read the sheets into DataFrames
@@ -19,8 +20,9 @@ def generate_wikipedia_link(channel_name):
 df_sheet1["Channel_Name"] = df_sheet1["Channel_Name"].apply(generate_wikipedia_link)
 df_sheet2["Channel_Name"] = df_sheet2["Channel_Name"].apply(generate_wikipedia_link)
 
+output_dir = './out/'
 # Save the updated DataFrames with hyperlinks
-output_path = "Hyperlinked_DIRECTV_Channel_Lineup.xlsx"
+output_path = output_dir + "Hyperlinked_DIRECTV_Channel_Lineup.xlsx"
 
 with pd.ExcelWriter(output_path, engine="xlsxwriter") as writer:
     # Write first sheet with hyperlinks
