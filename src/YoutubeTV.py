@@ -4,96 +4,72 @@ import time
 import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.chrome.service import Service
+from src.WebDriverUtils import run_webdriver, OUTPUT_DIR
 
-# Variables
-zipcode = "79423"
-url = f"https://tv.youtube.com/welcome/?utm_servlet=prod&rd_rsn=asi&zipcode={zipcode}"
-submit_button_class = "tv-network-browser__input-area-submit"  # Class of the submit button
-modal_selector = "tv-network-browser-matrix"  # Alias for the modal container
-content_div_class = "tv-network-matrix__body"  # Class of the div containing the channel list
+# VARIABLES FOR FLEXIBILITY
+YOUTUBE_TV_URL = "https://tv.youtube.com/welcome/?utm_servlet=prod&rd_rsn=asi&zipcode=79423"
+ZIPCODE = "79423"
+MODAL_SELECTOR = "tv-network-browser-matrix"
+CONTENT_DIV_CLASS = "tv-network-matrix__body"
+COMPARE_BUTTON_CLASS = "tv-network-browser__input-area-submit"
 
-# Define output directories
-output_dir = "./output"
-output_file = os.path.join(output_dir, "YoutubeTVChannelList.xls")
+def scrape_youtube_tv():
+    driver = run_webdriver()
+    driver.get(YOUTUBE_TV_URL)
+    
+    try:
+        print("WAITING FOR PAGE TO LOAD...")
+        time.sleep(5)  # ALLOW JAVASCRIPT EXECUTION
 
-# Ensure output directory exists
-os.makedirs(output_dir, exist_ok=True)
-
-# Setup Selenium WebDriver options
-chrome_options = Options()
-# chrome_options.add_argument("--headless")  # Run headless mode (uncomment when debugging is done)
-chrome_options.add_argument("--disable-gpu")
-chrome_options.add_argument("--no-sandbox")
-
-# Use WebDriver Manager to automatically download the correct ChromeDriver
-service = Service(ChromeDriverManager().install())
-driver = webdriver.Chrome(service=service, options=chrome_options)
-
-# Load the YouTube TV webpage
-driver.get(url)
-
-try:
-    # Wait for input box and set ZIP code
-    print("Entering ZIP code...")
-    zip_input = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, ZIP_INPUT_ID)))
-    driver.execute_script(f"arguments[0].setAttribute('placeholder', '{ZIPCODE}');", zip_input)
-    driver.execute_script(f"arguments[0].setAttribute('value', '{ZIPCODE}');", zip_input)
-    time.sleep(2)  # Give time for page to react
-
-    # Initialize Data Storage
-    all_data = {}
-
-    for plan, plan_id in PACKAGE_CONTAINERS.items():
-        print(f"Processing {plan} plan...")
-
-        # Locate plan container and click "Learn More"
-        plan_container = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.XPATH, f"//div[@data-testid='{plan_id}']"))
+        # LOCATE AND CLICK THE COMPARE PLANS BUTTON
+        print("LOCATING COMPARE PLANS BUTTON...")
+        compare_button = WebDriverWait(driver, 15).until(
+            EC.element_to_be_clickable((By.CLASS_NAME, COMPARE_BUTTON_CLASS))
         )
-        learn_more_button = plan_container.find_element(By.CLASS_NAME, LEARN_MORE_BUTTON_CLASS)
-        driver.execute_script("arguments[0].click();", learn_more_button)  # Mimic user click
-        print(f"Opened {plan} plan details...")
+        driver.execute_script("arguments[0].click();", compare_button)  # SIMULATE USER CLICK
+        print("COMPARE PLANS WINDOW OPENED SUCCESSFULLY.")
 
-        # Click "Show More" to load full list
-        show_more_button = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CLASS_NAME, SHOW_MORE_BUTTON_CLASS))
+        # WAIT FOR CHANNEL LIST TO LOAD IN MODAL
+        print("WAITING FOR CHANNEL LIST TO LOAD...")
+        WebDriverWait(driver, 30).until(
+            lambda d: d.execute_script(f"""
+                let modal = document.querySelector('{MODAL_SELECTOR}');
+                return modal && modal.innerText.trim().length > 0;
+            """)
         )
-        driver.execute_script("arguments[0].click();", show_more_button)
-        print("Loaded full channel list...")
+        print("CHANNEL LIST LOADED SUCCESSFULLY.")
 
-        # Extract all channels from `img` title attributes
-        time.sleep(2)  # Give time for images to load
-        channels = [
-            img.get_attribute("title") for img in driver.find_elements(By.TAG_NAME, IMG_TITLE_TAG)
-        ]
-        print(f"Extracted {len(channels)} channels for {plan}.")
+        # EXTRACT CHANNEL CONTENT USING JAVASCRIPT
+        modal_content = driver.execute_script(f"""
+            let modal = document.querySelector('{MODAL_SELECTOR}');
+            return modal ? modal.innerHTML : 'Not Found';
+        """)
+        
+        # IF CONTENT IS NOT FOUND, EXIT SCRIPT
+        if modal_content == "Not Found" or modal_content.strip() == "":
+            print("ERROR: CHANNEL LIST NOT FOUND.")
+            driver.quit()
+            exit()
 
-        # Store data in dictionary
-        all_data[plan] = pd.DataFrame(channels, columns=["Channel Name"])
+        # EXTRACT CHANNEL NAMES FROM INNER HTML
+        channel_names = re.findall(r'Button - (.*?) \(all-channels\)', modal_content)
+        print(f"EXTRACTED {len(channel_names)} CHANNELS FROM YOUTUBE TV.")
 
-        # Close pop-up window to return to main page
-        close_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.XPATH, f"//button[@aria-label='{CLOSE_POPUP_BUTTON_ARIA}']"))
-        )
-        driver.execute_script("arguments[0].click();", close_button)
-        print(f"Closed {plan} details window.")
+        # CONVERT DATA TO DATAFRAME
+        df_youtube_tv = pd.DataFrame(channel_names, columns=["Channel Name"])
 
-    # Save all plans into a single Excel file with separate sheets
-    with pd.ExcelWriter(OUTPUT_FILE, engine="xlsxwriter") as writer:
-        for plan, df in all_data.items():
-            df.to_excel(writer, sheet_name=plan, index=False)
-            worksheet = writer.sheets[plan]
-            worksheet.freeze_panes(1, 0)  # Freeze the first row
+        # SAVE TO EXCEL WITH FORMATTING
+        with pd.ExcelWriter(OUTPUT_FILE, engine="xlsxwriter") as writer:
+            df_youtube_tv.to_excel(writer, sheet_name="YouTube TV Channels", index=False)
+            worksheet = writer.sheets["YouTube TV Channels"]
+            worksheet.freeze_panes(1, 0)  # FREEZE THE FIRST ROW
 
-    print(f"Excel file saved: {OUTPUT_FILE}")
+        print(f"EXCEL FILE SAVED SUCCESSFULLY: {OUTPUT_FILE}")
 
-except Exception as e:
-    print(f"Error: {e}")
+    except Exception as e:
+        print(f"ERROR: {e}")
 
-finally:
-    driver.quit()
+    finally:
+        driver.quit()
