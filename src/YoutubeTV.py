@@ -6,70 +6,72 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from src.WebDriverUtils import run_webdriver, OUTPUT_DIR
+from src.WebDriverUtils import run_webdriver, OUTPUT_DIR, click_button
 
-# VARIABLES FOR FLEXIBILITY
+# Variables for flexibility
 YOUTUBE_TV_URL = "https://tv.youtube.com/welcome/?utm_servlet=prod&rd_rsn=asi&zipcode=79423"
 ZIPCODE = "79423"
 MODAL_SELECTOR = "tv-network-browser-matrix"
 CONTENT_DIV_CLASS = "tv-network-matrix__body"
 COMPARE_BUTTON_CLASS = "tv-network-browser__input-area-submit"
+OUTPUT_FILE = os.path.join(OUTPUT_DIR, "YoutubeTVChannelList.xlsx")
 
 def scrape_youtube_tv():
     driver = run_webdriver()
     driver.get(YOUTUBE_TV_URL)
     
     try:
-        print("WAITING FOR PAGE TO LOAD...")
-        time.sleep(5)  # ALLOW JAVASCRIPT EXECUTION
+        print("Waiting for youtube page to load...")
+        time.sleep(2)  # Allow JavaScript execution
 
-        # LOCATE AND CLICK THE COMPARE PLANS BUTTON
-        print("LOCATING COMPARE PLANS BUTTON...")
+        # Locate and click the compare plans button
+        print("Locating compare plans button...")
         compare_button = WebDriverWait(driver, 15).until(
             EC.element_to_be_clickable((By.CLASS_NAME, COMPARE_BUTTON_CLASS))
         )
-        driver.execute_script("arguments[0].click();", compare_button)  # SIMULATE USER CLICK
-        print("COMPARE PLANS WINDOW OPENED SUCCESSFULLY.")
+        click_button(driver, compare_button)
 
-        # WAIT FOR CHANNEL LIST TO LOAD IN MODAL
-        print("WAITING FOR CHANNEL LIST TO LOAD...")
+        print("Compare plans window opened successfully.")
+
+        # Wait for channel list to load in modal
+        print("Waiting for channel list to load...")
         WebDriverWait(driver, 30).until(
             lambda d: d.execute_script(f"""
                 let modal = document.querySelector('{MODAL_SELECTOR}');
                 return modal && modal.innerText.trim().length > 0;
             """)
         )
-        print("CHANNEL LIST LOADED SUCCESSFULLY.")
+        print("Channel list loaded successfully.")
 
-        # EXTRACT CHANNEL CONTENT USING JAVASCRIPT
+        # Extract channel content using JavaScript
         modal_content = driver.execute_script(f"""
             let modal = document.querySelector('{MODAL_SELECTOR}');
             return modal ? modal.innerHTML : 'Not Found';
         """)
         
-        # IF CONTENT IS NOT FOUND, EXIT SCRIPT
+        # If content is not found, exit script
         if modal_content == "Not Found" or modal_content.strip() == "":
-            print("ERROR: CHANNEL LIST NOT FOUND.")
+            print("Error: Channel list not found.")
             driver.quit()
             exit()
 
-        # EXTRACT CHANNEL NAMES FROM INNER HTML
+        # Extract channel names from inner html
         channel_names = re.findall(r'Button - (.*?) \(all-channels\)', modal_content)
-        print(f"EXTRACTED {len(channel_names)} CHANNELS FROM YOUTUBE TV.")
+        print(f"Extracted {len(channel_names)} channels from YouTube TV.")
 
-        # CONVERT DATA TO DATAFRAME
+        # Convert data to dataframe
         df_youtube_tv = pd.DataFrame(channel_names, columns=["Channel Name"])
 
-        # SAVE TO EXCEL WITH FORMATTING
+        # Save to excel with formatting
         with pd.ExcelWriter(OUTPUT_FILE, engine="xlsxwriter") as writer:
             df_youtube_tv.to_excel(writer, sheet_name="YouTube TV Channels", index=False)
             worksheet = writer.sheets["YouTube TV Channels"]
-            worksheet.freeze_panes(1, 0)  # FREEZE THE FIRST ROW
+            worksheet.freeze_panes(1, 0)  # Freeze the first row
 
-        print(f"EXCEL FILE SAVED SUCCESSFULLY: {OUTPUT_FILE}")
+        print(f"Excel file saved successfully: {OUTPUT_FILE}")
 
     except Exception as e:
-        print(f"ERROR: {e}")
+        print(f"Error: {e}")
 
     finally:
         driver.quit()

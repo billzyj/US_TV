@@ -1,15 +1,14 @@
 import os
 import time
 import pandas as pd
-from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from src.WebDriverUtils import run_webdriver, OUTPUT_DIR
+from src.WebDriverUtils import run_webdriver, OUTPUT_DIR, click_button
 
 # Variables for flexibility
 SLING_URL = "https://www.sling.com/channels"
-COMPARE_BUTTON_CLASS = "sc-kcbnda gFLBJo sc-kNBZmU dFLigJ"
+COMPARE_BUTTON_CLASS = "sc-kcbnda"
 PLAN_DIV_CLASSES = {
     "Orange": "sc-esExBO fmSNeb",
     "Blue": "sc-esExBO fmSNeb",
@@ -17,22 +16,35 @@ PLAN_DIV_CLASSES = {
 }
 IMG_TAG = "img"
 OUTPUT_DIR = "./output"
-OUTPUT_FILE = os.path.join(OUTPUT_DIR, "Sling.xls")
+OUTPUT_FILE = os.path.join(OUTPUT_DIR, "SlingTVChannelList.xls")
 
 def scrape_sling_tv():
     driver = run_webdriver()
     driver.get(SLING_URL)
     print("Waiting for page to load...")
-    time.sleep(5)  # Allow JavaScript execution
+    time.sleep(2)  # Allow JavaScript execution
 
     try:
+        print("Checking for promotion pop-up...")
+        try:
+            # Locate pop-up close button
+            close_popup_button = WebDriverWait(driver, 5).until(
+                EC.element_to_be_clickable((By.XPATH, "//button[@type='reset']"))
+            )
+            click_button(driver, close_popup_button)
+            print("Closed promotion pop-up.")
+            time.sleep(1)
+        except:
+            print("No pop-up found, proceeding.")
+
         # Locate and click the "Compare Plans" button
         print("Locating Compare Plans button...")
         compare_button = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.CLASS_NAME, COMPARE_BUTTON_CLASS))
         )
-        driver.execute_script("arguments[0].click();", compare_button)  # Mimic user click
+        click_button(driver, compare_button)
         print("Opened Compare Plans window...")
+        time.sleep(1)
 
         # Initialize dictionary to store channel data
         all_channels = {}
