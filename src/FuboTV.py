@@ -25,18 +25,26 @@ CLOSE_POPUP_BUTTON_ARIA = "Close"
 OUTPUT_FILE = os.path.join(OUTPUT_DIR, "FuboTVChannelList.xlsx")
 print("Web scraping FuboTV...")
 
+def set_zipcode(driver):
+    """Ensures the correct ZIP code is set before loading channel data."""
+    print("Setting ZIP code...")
+    zip_input = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.ID, ZIP_INPUT_ID))
+    )
+    driver.execute_script(f"""
+        arguments[0].value = '{ZIPCODE}'; 
+        arguments[0].dispatchEvent(new Event('input'));
+    """, zip_input)
+
+    time.sleep(2)  # Allow JavaScript to update content
+    print("ZIP code set successfully.")
+
 def scrape_fubo_tv():
     driver = run_webdriver()
     driver.get(FUBO_URL)
 
-    try:
-        print("Entering ZIP code...")
-        zip_input = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.ID, ZIP_INPUT_ID))
-        )
-        driver.execute_script(f"arguments[0].setAttribute('value', '{ZIPCODE}');", zip_input)
-        
-        all_data = {}
+    try:        
+        all_channels = {}
 
         for plan, plan_id in PACKAGE_CONTAINERS.items():
             print(f"Processing {plan} plan...")
@@ -44,6 +52,8 @@ def scrape_fubo_tv():
             # Reload the DOM to prevent stale element reference
             driver.refresh()
             time.sleep(1)  # Give time for elements to reload
+
+            set_zipcode(driver)
 
             # Re-locate plan container to prevent stale element reference
             plan_container = WebDriverWait(driver, 10).until(
@@ -78,9 +88,14 @@ def scrape_fubo_tv():
 
             # Extract channel names from inner html
             channels = set(re.findall(r'title="([^"]+)"', modal_content))
-            print("Channels recorded")
+            print(f"Extracted {len(channels)} channels for {plan}.")
 
-            all_data[plan] = pd.DataFrame(channels, columns=["Channel Name"])
+            # Store channel presence in dictionary
+            for channel in channels:
+                if channel not in all_channels:
+                    all_channels[channel] = {plan_key: "" for plan_key in PACKAGE_CONTAINERS.keys()}  # Dynamic keys
+                all_channels[channel][plan] = "✔"
+
             # Re-locate and close the pop-up before moving to the next plan
             close_button = WebDriverWait(driver, 10).until(
                 EC.element_to_be_clickable((By.XPATH, f"//button[@aria-label='{CLOSE_POPUP_BUTTON_ARIA}']"))
@@ -88,13 +103,18 @@ def scrape_fubo_tv():
             click_button(driver, close_button)
             print("Channel list closed")
 
-        # Save data to excel
-        with pd.ExcelWriter(OUTPUT_FILE, engine="xlsxwriter") as writer:
-            for plan, df in all_data.items():
-                df.to_excel(writer, sheet_name=plan, index=False)
-                writer.sheets[plan].freeze_panes(1, 0)
+        # Convert dictionary to DataFrame
+        df_fubo_tv = pd.DataFrame.from_dict(all_channels, orient="index").reset_index()
+        df_fubo_tv.columns = ["Channel Name"] + list(PACKAGE_CONTAINERS.keys())
 
-        print(f"FuboTV data saved: {OUTPUT_FILE}")
+        # Save to Excel in a single sheet
+        with pd.ExcelWriter(OUTPUT_FILE, engine="xlsxwriter") as writer:
+            df_fubo_tv.to_excel(writer, sheet_name="FuboTV Channels", index=False)
+            worksheet = writer.sheets["FuboTV Channels"]
+            worksheet.freeze_panes(1, 0)  # Freeze the first row
+            worksheet.autofilter(0, 0, len(df_fubo_tv), len(df_fubo_tv.columns) - 1)  # Sort only "Channel Name"
+            
+        print(f"Excel file saved successfully: {OUTPUT_FILE}")
     
     except Exception as e:
         print(f"ERROR: {e}")
