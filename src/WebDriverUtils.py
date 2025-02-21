@@ -12,12 +12,24 @@ from selenium.webdriver.common.by import By
 OUTPUT_DIR = "./output"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-def run_webdriver():
-    """Initialize and return a Selenium WebDriver instance."""
+def run_webdriver(mode="headless"):
+    """Initialize and return a Selenium WebDriver instance.
+
+    - Default mode is headless.
+    - If 'gui' is passed, it runs in traditional mode (with browser UI).
+    """
     chrome_options = Options()
-    #chrome_options.add_argument("--headless")  # Uncomment for headless mode
-    chrome_options.add_argument("--disable-gpu")
+
+    if mode.lower() == "headless":
+        chrome_options.add_argument("--headless=new")  # Improved headless mode
+        chrome_options.add_argument("--disable-gpu")  # Needed for headless stability
+        chrome_options.add_argument("--window-size=1920,1080")  # Ensure consistent UI loading
+
+    # Common options
     chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")  # Prevent crashes on some systems
+
+    print(f"Starting WebDriver in {'Headless' if 'headless' in mode else 'GUI'} mode...")
 
     service = Service(ChromeDriverManager().install())
     return webdriver.Chrome(service=service, options=chrome_options)
@@ -30,3 +42,36 @@ def click_button(driver, button):
         driver.execute_script("arguments[0].click();", button)  # Click using JS
     except Exception as e:
         print(f"Error: {e}")
+
+def set_zipcode(driver, zipcode, zip_input_id=None, zip_class=None):
+    """Ensures the correct ZIP code is set before loading channel data.
+    
+    - Tries `zip_input_id` first if provided.
+    - Falls back to `zip_class` if `zip_input_id` is not available.
+    """
+
+    print("Setting ZIP code...")
+
+    # Determine locator strategy dynamically
+    if zip_input_id:
+        locator = (By.ID, zip_input_id)
+    elif zip_class:
+        locator = (By.CLASS_NAME, zip_class)
+    else:
+        raise ValueError("Both zip_input_id and zip_class cannot be None. Provide at least one.")
+
+    # Wait for the ZIP input field to appear
+    zip_input = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located(locator)
+    )
+
+    print("Located ZIP input field")
+
+    # Set the ZIP code and trigger JavaScript input events
+    driver.execute_script(f"""
+        arguments[0].value = '{zipcode}'; 
+        arguments[0].dispatchEvent(new Event('input'));
+    """, zip_input)
+
+    time.sleep(1)  # Allow JavaScript to update content
+    print("ZIP code set successfully.")

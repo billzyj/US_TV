@@ -4,25 +4,28 @@ import pandas as pd
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from src.WebDriverUtils import run_webdriver, OUTPUT_DIR, click_button
+from src.WebDriverUtils import run_webdriver, OUTPUT_DIR, click_button, set_zipcode
 
 # Variables for flexibility
 SLING_URL = "https://www.sling.com/channels"
-COMPARE_BUTTON_CLASS = "sc-kcbnda"
+COMPARE_BUTTON_CLASS = "bCdbqq"
+ZIPCODE = "79423"
+ZIP_CLASS = "sc-hokXgN"
 PLAN_DIV_CLASSES = {
-    "Orange": "sc-esExBO fmSNeb",
-    "Blue": "sc-esExBO fmSNeb",
-    "Both": "sc-esExBO fmSNeb",
+    "Orange": "zRktI",
+    "Blue": "hZrsXy",
+    "Both": "hRtvzv",
 }
 IMG_TAG = "img"
 OUTPUT_DIR = "./output"
-OUTPUT_FILE = os.path.join(OUTPUT_DIR, "SlingTVChannelList.xls")
+OUTPUT_FILE = os.path.join(OUTPUT_DIR, "SlingTVChannelList.xlsx")
 
 def scrape_sling_tv():
-    driver = run_webdriver()
+    print("Web scraping SlingTV...")
+    driver = run_webdriver("gui")
     driver.get(SLING_URL)
     print("Waiting for page to load...")
-    time.sleep(2)  # Allow JavaScript execution
+    #time.sleep(1)  # Allow JavaScript execution
 
     try:
         print("Checking for promotion pop-up...")
@@ -33,18 +36,20 @@ def scrape_sling_tv():
             )
             click_button(driver, close_popup_button)
             print("Closed promotion pop-up.")
-            time.sleep(1)
+            time.sleep(2)
         except:
             print("No pop-up found, proceeding.")
 
         # Locate and click the "Compare Plans" button
         print("Locating Compare Plans button...")
-        compare_button = WebDriverWait(driver, 10).until(
+        compare_button = WebDriverWait(driver, 20).until(
             EC.element_to_be_clickable((By.CLASS_NAME, COMPARE_BUTTON_CLASS))
         )
         click_button(driver, compare_button)
         print("Opened Compare Plans window...")
         time.sleep(1)
+        
+        set_zipcode(driver, ZIPCODE, zip_class=ZIP_CLASS)
 
         # Initialize dictionary to store channel data
         all_channels = {}
@@ -52,10 +57,13 @@ def scrape_sling_tv():
         for plan, plan_class in PLAN_DIV_CLASSES.items():
             print(f"Processing {plan} plan...")
 
-            # Locate plan container
-            plan_container = WebDriverWait(driver, 10).until(
+            # Locate the unique container div
+            unique_div = WebDriverWait(driver, 10).until(
                 EC.presence_of_element_located((By.CLASS_NAME, plan_class))
             )
+
+            # Locate the next sibling div that actually contains the channels
+            plan_container = unique_div.find_element(By.XPATH, "following-sibling::div")
 
             # Extract all channels from `img alt` attributes
             channels = [
@@ -66,10 +74,13 @@ def scrape_sling_tv():
             # Store channel presence in dictionary
             for channel in channels:
                 if channel not in all_channels:
-                    all_channels[channel] = {"Orange": "", "Blue": "", "Both": ""}
+                    all_channels[channel] = {plan_key: "" for plan_key in PLAN_DIV_CLASSES.keys()}
 
-                # Mark corresponding column with ✅
-                all_channels[channel][plan] = "✅"
+                # Mark corresponding column with √
+                all_channels[channel][plan] = "√"
+                
+                if plan != "Both":
+                    all_channels[channel]["Both"] = "√"
 
         # Convert dictionary to DataFrame
         df_sling_tv = pd.DataFrame.from_dict(all_channels, orient="index").reset_index()

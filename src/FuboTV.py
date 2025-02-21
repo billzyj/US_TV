@@ -5,7 +5,7 @@ import pandas as pd
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from src.WebDriverUtils import run_webdriver, OUTPUT_DIR, click_button
+from src.WebDriverUtils import run_webdriver, OUTPUT_DIR, click_button, set_zipcode
 
 
 # Variables for flexibility
@@ -23,24 +23,10 @@ CHANNEL_DIV_CLASS = ".css-1tqzony"
 IMG_TAG = "img"
 CLOSE_POPUP_BUTTON_ARIA = "Close"
 OUTPUT_FILE = os.path.join(OUTPUT_DIR, "FuboTVChannelList.xlsx")
-print("Web scraping FuboTV...")
-
-def set_zipcode(driver):
-    """Ensures the correct ZIP code is set before loading channel data."""
-    print("Setting ZIP code...")
-    zip_input = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.ID, ZIP_INPUT_ID))
-    )
-    driver.execute_script(f"""
-        arguments[0].value = '{ZIPCODE}'; 
-        arguments[0].dispatchEvent(new Event('input'));
-    """, zip_input)
-
-    time.sleep(2)  # Allow JavaScript to update content
-    print("ZIP code set successfully.")
 
 def scrape_fubo_tv():
-    driver = run_webdriver()
+    print("Web scraping FuboTV...")
+    driver = run_webdriver("gui")
     driver.get(FUBO_URL)
 
     try:        
@@ -53,7 +39,7 @@ def scrape_fubo_tv():
             driver.refresh()
             time.sleep(1)  # Give time for elements to reload
 
-            set_zipcode(driver)
+            set_zipcode(driver, ZIPCODE, zip_input_id=ZIP_INPUT_ID)
 
             # Re-locate plan container to prevent stale element reference
             plan_container = WebDriverWait(driver, 10).until(
@@ -94,7 +80,7 @@ def scrape_fubo_tv():
             for channel in channels:
                 if channel not in all_channels:
                     all_channels[channel] = {plan_key: "" for plan_key in PACKAGE_CONTAINERS.keys()}  # Dynamic keys
-                all_channels[channel][plan] = "✔"
+                all_channels[channel][plan] = "√"
 
             # Re-locate and close the pop-up before moving to the next plan
             close_button = WebDriverWait(driver, 10).until(
