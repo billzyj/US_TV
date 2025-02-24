@@ -7,8 +7,10 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 
 # Output directory
+ZIPCODE = "79423"
 OUTPUT_DIR = "./output"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
@@ -52,6 +54,9 @@ def set_zipcode(driver, zipcode, zip_input_id=None, zip_class=None):
 
     print("Setting ZIP code...")
 
+    if not zip_input_id and not zip_class:
+        raise ValueError("You must provide either zip_input_id or zip_class.")
+    
     # Determine locator strategy dynamically
     if zip_input_id:
         locator = (By.ID, zip_input_id)
@@ -67,11 +72,23 @@ def set_zipcode(driver, zipcode, zip_input_id=None, zip_class=None):
 
     print("Located ZIP input field")
 
-    # Set the ZIP code and trigger JavaScript input events
-    driver.execute_script(f"""
-        arguments[0].value = '{zipcode}'; 
-        arguments[0].dispatchEvent(new Event('input'));
-    """, zip_input)
+        # Select all and delete existing text (to avoid stale values)
+    zip_input.send_keys(Keys.CONTROL + "a")  # Select all
+    zip_input.send_keys(Keys.BACKSPACE)  # Clear input
 
-    time.sleep(1)  # Allow JavaScript to update content
-    print("ZIP code set successfully.")
+    # Simulate typing character by character
+    for char in zipcode:
+        zip_input.send_keys(char)
+        time.sleep(0.1)  # Simulates real typing speed
+
+    print("ZIP code typed successfully.")
+
+    # zip_input.clear()
+    # # Set the ZIP code and trigger JavaScript input events
+    # driver.execute_script(f"""
+    #     arguments[0].value = '{zipcode}'; 
+    #     arguments[0].dispatchEvent(new Event('input'));
+    # """, zip_input)
+
+    # time.sleep(1)  # Allow JavaScript to update content
+    # print("ZIP code set successfully.")

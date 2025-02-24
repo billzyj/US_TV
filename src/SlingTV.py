@@ -4,12 +4,11 @@ import pandas as pd
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from src.WebDriverUtils import run_webdriver, OUTPUT_DIR, click_button, set_zipcode
+from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, run_webdriver, click_button, set_zipcode
 
 # Variables for flexibility
 SLING_URL = "https://www.sling.com/channels"
 COMPARE_BUTTON_CLASS = "bCdbqq"
-ZIPCODE = "79423"
 ZIP_CLASS = "sc-hokXgN"
 PLAN_DIV_CLASSES = {
     "Orange": "zRktI",
@@ -17,12 +16,11 @@ PLAN_DIV_CLASSES = {
     "Both": "hRtvzv",
 }
 IMG_TAG = "img"
-OUTPUT_DIR = "./output"
 OUTPUT_FILE = os.path.join(OUTPUT_DIR, "SlingTVChannelList.xlsx")
 
-def scrape_sling_tv():
+def scrape_sling_tv(mode="headless"):
     print("Web scraping SlingTV...")
-    driver = run_webdriver("gui")
+    driver = run_webdriver(mode)
     driver.get(SLING_URL)
     print("Waiting for page to load...")
     #time.sleep(1)  # Allow JavaScript execution

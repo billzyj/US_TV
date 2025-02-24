@@ -16,9 +16,9 @@ CONTENT_DIV_CLASS = "tv-network-matrix__body"
 COMPARE_BUTTON_CLASS = "tv-network-browser__input-area-submit"
 OUTPUT_FILE = os.path.join(OUTPUT_DIR, "YoutubeTVChannelList.xlsx")
 
-def scrape_youtube_tv():
+def scrape_youtube_tv(mode="headless"):
     print("Web scraping YoutubeTV...")
-    driver = run_webdriver()
+    driver = run_webdriver(mode)
     driver.get(YOUTUBE_TV_URL)
     
     try:
