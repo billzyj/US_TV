@@ -20,7 +20,6 @@ def scrape_hulu_tv(mode="headless"):
     driver = run_webdriver(mode)
     driver.get(HULU_URL)
     print("Waiting for page to load...")
-    #time.sleep(1)  # Allow JavaScript execution
 
     try:
         # Locate and click the "View Channels" button
