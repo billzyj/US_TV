@@ -5,7 +5,7 @@ import pandas as pd
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, run_webdriver, click_button, set_zipcode
+from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, run_webdriver, move_mouse_randomly, click_button, set_zipcode
 
 # Variables for flexibility
 DIRECTV_STREAM_URL = "https://streamtv.directv.com/stream-packages/"
@@ -21,9 +21,9 @@ CHANNELS_TABLE_ROW_CLASS = "nestedTableRow"
 PACKAGES = ["Entertainment", "Choice", "Ultimate", "Premier"]
 OUTPUT_FILE = os.path.join(OUTPUT_DIR, "DirecTVChannelList.xlsx")
 
-def scrape_directv(mode="headless"):
+def scrape_directv_stream(mode="headless"):
     """Scrapes live channel data from DirecTV."""
-    print("Web scraping DirecTV...")
+    print("Web scraping DirecTV Stream...")
     driver = run_webdriver(mode)
     driver.get(DIRECTV_STREAM_URL)
     print("Waiting for page to load...")
@@ -43,6 +43,7 @@ def scrape_directv(mode="headless"):
         change_zipcode_link = WebDriverWait(driver, 20).until(
             EC.element_to_be_clickable((By.CLASS_NAME, CHANGE_ZIPCODE_LINK_CLASS))
         )
+        #move_mouse_randomly(driver)
         click_button(driver, change_zipcode_link)
         print("Setting zipcode...")
     

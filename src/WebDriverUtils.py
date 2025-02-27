@@ -8,6 +8,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.action_chains import ActionChains
+import random
+import time
 
 # Output directory
 ZIPCODE = "79423"
@@ -30,11 +33,22 @@ def run_webdriver(mode="headless"):
     # Common options
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")  # Prevent crashes on some systems
+    chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    chrome_options.add_experimental_option("useAutomationExtension", False)
 
     print(f"Starting WebDriver in {'Headless' if 'headless' in mode else 'GUI'} mode...")
 
     service = Service(ChromeDriverManager().install())
     return webdriver.Chrome(service=service, options=chrome_options)
+
+def move_mouse_randomly(driver):
+    actions = ActionChains(driver)
+    for _ in range(random.randint(5, 10)):
+        x_offset = random.randint(-20, 20)
+        y_offset = random.randint(-20, 20)
+        actions.move_by_offset(x_offset, y_offset).perform()
+        time.sleep(random.uniform(0.1, 0.5))
 
 def click_button(driver, button):
     try:
@@ -72,7 +86,7 @@ def set_zipcode(driver, zipcode, zip_input_id=None, zip_class=None):
 
     print("Located ZIP input field")
 
-        # Select all and delete existing text (to avoid stale values)
+    # Select all and delete existing text (to avoid stale values)
     zip_input.send_keys(Keys.CONTROL + "a")  # Select all
     zip_input.send_keys(Keys.BACKSPACE)  # Clear input
 
@@ -80,7 +94,6 @@ def set_zipcode(driver, zipcode, zip_input_id=None, zip_class=None):
     for char in zipcode:
         zip_input.send_keys(char)
         time.sleep(0.1)  # Simulates real typing speed
-
     print("ZIP code typed successfully.")
 
     # zip_input.clear()

@@ -32,7 +32,6 @@ def scrape_directv(mode="headless"):
         )
         click_button(driver, set_zip_link)
         print("Opened set zipcode window...")
-        time.sleep(1)
         
         # Set zipcode and submit, page will be refreshed
         set_zipcode(driver, ZIPCODE, zip_input_id=ZIP_INPUT_ID)
@@ -47,23 +46,24 @@ def scrape_directv(mode="headless"):
         last_height = driver.execute_script("return document.body.scrollHeight")
         while True:
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            time.sleep(1)
+            time.sleep(0.1)
             new_height = driver.execute_script("return document.body.scrollHeight")
             if new_height == last_height:
                 break
             last_height = new_height
+        time.sleep(2)
         print("All channels loaded.")
-
+        
         # Locate the channels container div
         channels_div = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.ID, CHANNELS_DIV_ID))
         )
-
-        # Extract all channel rows
-        channels = WebDriverWait(channels_div, 10).until(
-            EC.presence_of_all_elements_located((By.CLASS_NAME, TABLE_ROW_CLASS))
-        )
-
+        print("channel div located")
+        print(channels_div)
+        # Extract all channel rows within channels_div
+        channels = channels_div.find_elements(By.CLASS_NAME, TABLE_ROW_CLASS)
+        print("channels extracted")
+        print(channels)
         # ✅ TODO 2: Extract Channel Name, Number, and Availability in Plans
         all_channels = []
 
