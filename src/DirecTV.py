@@ -5,15 +5,18 @@ import pandas as pd
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, run_webdriver, click_button, set_zipcode
+from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, run_webdriver, click_button, set_zipcode, smooth_scroll_to_bottom
 
 # Variables for flexibility
 DIRECTV_URL = "https://www.directv.com/channel-lineup/"
 SET_ZIP_LINK_CLASS = "mui-style-11zofoq"
 ZIP_INPUT_ID = "zipcode-search"
 SET_ZIP_LINK_BUTTON_ARIA_LABEL = "Set ZIP Code"
+CHANNELS_TABLE_BODY_ID = "tableBody"
+CHANNELS_TABLE_ROW_ID = "tableBodyRow"
+TOGGLE_BUTTON_CLASS = "mui-style-1ii9cd9"
 CHANNELS_DIV_ID = "nestedTableBody"
-TABLE_ROW_CLASS = "nestedTableRow"
+TABLE_ROW_ID = "nestedTableRow"
 PACKAGES = ["Entertainment", "Choice", "Ultimate", "Premier"]
 OUTPUT_FILE = os.path.join(OUTPUT_DIR, "DirecTVChannelList.xlsx")
 
@@ -41,37 +44,39 @@ def scrape_directv(mode="headless"):
         )
         click_button(driver, set_zipcode_button)
 
-        # ✅ TODO 1: Scroll down to the bottom of the page to load all channels
-        print("Scrolling down to load all channels...")
-        last_height = driver.execute_script("return document.body.scrollHeight")
-        while True:
-            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            time.sleep(0.1)
-            new_height = driver.execute_script("return document.body.scrollHeight")
-            if new_height == last_height:
-                break
-            last_height = new_height
-        time.sleep(2)
-        print("All channels loaded.")
+        # # Locate the channels table body
+        # channels_table_body = WebDriverWait(driver, 10).until(
+        #     EC.presence_of_element_located((By.ID, CHANNELS_TABLE_BODY_ID))
+        # )
+        
+        # # Locate all rows within the table
+        # table_rows = channels_table_body.find_elements(By.XPATH, f"//tr[contains(@id, '{CHANNELS_TABLE_ROW_ID}')]")
+
+        # # Find the last dropdown toggle button (img)
+        # dropdown_toggle = table_rows[-1].find_element(By.CLASS_NAME, TOGGLE_BUTTON_CLASS)
+        # click_button(driver, dropdown_toggle)
+        # print(f"closed add-on channels")
+
+        smooth_scroll_to_bottom(driver)
         
         # Locate the channels container div
         channels_div = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.ID, CHANNELS_DIV_ID))
         )
         print("channel div located")
-        print(channels_div)
         # Extract all channel rows within channels_div
-        channels = channels_div.find_elements(By.CLASS_NAME, TABLE_ROW_CLASS)
+        channels = channels_div.find_elements(By.ID, TABLE_ROW_ID)
         print("channels extracted")
-        print(channels)
-        # ✅ TODO 2: Extract Channel Name, Number, and Availability in Plans
-        all_channels = []
 
+        # Extract Channel Name, Number, and Availability in Plans
+        all_channels = []
+        print(len(channels))
         for channel in channels:
             cells = channel.find_elements(By.TAG_NAME, "td")
 
             # Extract channel name and number (inside first td)
             channel_info = cells[0].find_elements(By.TAG_NAME, "p")
+            #print(channel_info[0].text, " ", channel_info[1].text)
             if len(channel_info) < 2:
                 continue  # Skip if information is missing
             channel_name = channel_info[0].text.strip()
@@ -92,7 +97,7 @@ def scrape_directv(mode="headless"):
         # Sort DataFrame by Channel Name
         df_directv = df_directv.sort_values(by=["Channel Name"])
 
-        # ✅ TODO 3: Write to Excel File
+        # Write to Excel File
         with pd.ExcelWriter(OUTPUT_FILE, engine="xlsxwriter") as writer:
             df_directv.to_excel(writer, sheet_name="DirecTV Channels", index=False)
             worksheet = writer.sheets["DirecTV Channels"]

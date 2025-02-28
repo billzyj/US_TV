@@ -105,3 +105,33 @@ def set_zipcode(driver, zipcode, zip_input_id=None, zip_class=None):
 
     # time.sleep(1)  # Allow JavaScript to update content
     # print("ZIP code set successfully.")
+
+# Scroll down incrementally to ensure all channels are loaded
+import time
+
+def smooth_scroll_to_bottom(driver, scroll_step=1000, wait_time=0.2):
+    """
+    Smoothly scrolls from top to bottom in steps, even if document.body.scrollHeight is fixed.
+    
+    Parameters:
+        driver: Selenium WebDriver instance.
+        scroll_step: Pixels per scroll step (default: 1000px).
+        wait_time: Time to wait after each scroll (default: 0.5s).
+    """
+    
+    print("Resetting scroll position to the top...")
+    driver.execute_script("window.scrollTo(0, 0);")
+    time.sleep(0.1)  # Allow the page to adjust
+
+    # Get the total scroll height
+    total_height = driver.execute_script("return document.body.scrollHeight")
+    current_position = 0  # Track the current scroll position
+
+    print(f"Starting smooth scroll to bottom... (Total Height: {total_height}px)")
+
+    while current_position < 2 * total_height:
+        current_position += scroll_step
+        driver.execute_script(f"window.scrollTo(0, {current_position});")
+        time.sleep(wait_time)  # Allow content to load smoothly
+
+    print("Finished scrolling to the bottom.")
