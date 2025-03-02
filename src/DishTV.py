@@ -1,0 +1,112 @@
+import os
+import time
+import pandas as pd
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, move_mouse_randomly, run_webdriver, set_zipcode
+
+# Variables for flexibility
+DISH_URL = "https://www.dish.com/"
+PACKAGES_UL_ID = "navList_TV Packages"
+PACKAGE_LI_ID = "navLink_shop"
+ZIP_INPUT_ARIA_LABEL = "Results for"
+ZIP_INPUT_CLASS = "cmp-textinput__input"
+CHANNELS_DIV_CLASS = "cmp-singlepackageclu__channellist"
+CHANNEL_CLASS = "cmp-singlepackageclu__channel"
+OUTPUT_FILE = os.path.join(OUTPUT_DIR, "DishTVChannelList.xlsx")
+
+def scrape_dishtv(mode="headless"):
+    """Scrapes live channel data from DishTV."""
+    print("Web scraping DishTV...")
+    driver = run_webdriver(mode)
+    driver.get(DISH_URL)
+    print("Waiting for page to load...")
+
+    try:
+        all_channels = {}  # Dictionary to store channels across packages
+
+        # Get packages name and url in the list
+        print("Locating packages info...")
+        WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located((By.ID, PACKAGES_UL_ID))
+        )
+
+        # Extract package names & URLs
+        package_elements = driver.find_elements(By.XPATH, "//ul[contains(@id, 'navList_TV Packages')]//a")
+        packages = {}
+        for pkg in package_elements:
+            package_name = pkg.get_attribute("aria-label")  # First try aria-label (reliable)
+            if not package_name:
+                package_name = pkg.text.strip()  # Fallback to .text if aria-label is missing
+            
+            package_url = pkg.get_attribute("href")
+            
+            if package_name:  # Ensure we don't store empty keys
+                packages[package_name] = package_url
+
+
+        print(f"Found {len(packages)} packages:", packages)
+
+        # Iterate over each package to scrape channels
+        for package_name, package_url in packages.items():
+            print(f"Processing package: {package_name}...")
+
+            driver.get(package_url)  # Navigate to package page
+            # Locate the ZIP code input box
+            zip_input_box = WebDriverWait(driver, 20).until(
+                EC.presence_of_element_located((By.XPATH, f"//input[@aria-label='{ZIP_INPUT_ARIA_LABEL}']"))
+            )
+
+            # Set ZIP code and mimic "Enter" key press
+            set_zipcode(driver, ZIPCODE, zip_class=ZIP_INPUT_CLASS)
+            zip_input_box.send_keys(Keys.ENTER)  # Simulate pressing Enter
+
+            # Locate the channels list
+            channels_div = WebDriverWait(driver, 20).until(
+                EC.presence_of_element_located((By.CLASS_NAME, CHANNELS_DIV_CLASS))
+            )
+
+            # Extract channel names
+            channels = channels_div.find_elements(By.CLASS_NAME, CHANNEL_CLASS)
+            print(f"Found {len(channels)} channels:")
+            for channel in channels:
+                try:
+                    channel_name = channel.find_element(By.TAG_NAME, "p").text.strip()
+                    # Extract only the name after "-"
+                    channel_name = channel_name.split(" - ")[-1] if " - " in channel_name else channel_name
+
+                    # Store channel in dictionary (mark available in this package)
+                    if channel_name not in all_channels:
+                        all_channels[channel_name] = {pkg: "" for pkg in packages.keys()}  # Initialize row
+                    all_channels[channel_name][package_name] = "✔"  # Mark availability
+                except Exception as e:
+                    print(f"Error extracting channel name: {e}")
+
+        # Convert dictionary to DataFrame
+        df = pd.DataFrame.from_dict(all_channels, orient="index")
+        df.index.name = "Channel Name"
+
+        # Save to Excel with a frozen first row and filtering enabled
+        with pd.ExcelWriter(OUTPUT_FILE, engine="xlsxwriter") as writer:
+            df.to_excel(writer, sheet_name="DishTV Channels")
+
+            # Get the workbook and worksheet objects
+            workbook = writer.book
+            worksheet = writer.sheets["DishTV Channels"]
+
+            # Freeze the first row (header)
+            worksheet.freeze_panes(1, 0)
+
+            # Enable filtering in Excel (sortable by channel name A-Z)
+            column_count = len(df.columns)
+            worksheet.autofilter(0, 0, len(df), column_count - 1)
+        
+        print(f"Scraped data saved to: {OUTPUT_FILE}")
+
+    except Exception as e:
+        print(f"Error: {e}")
+
+    finally:
+        driver.quit()
