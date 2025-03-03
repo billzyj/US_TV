@@ -19,7 +19,6 @@ CHANNELS_TABLE_HEADER_ID = "tableHeader"
 PACKAGE_NAME_CLASS = "MuiTypography-root"
 CHANNELS_DIV_ID = "nestedTableBody"
 TABLE_ROW_ID = "nestedTableRow"
-#PACKAGES = ["Entertainment", "Choice", "Ultimate", "Premier"]
 OUTPUT_FILE = os.path.join(OUTPUT_DIR, "DirecTVChannelList.xlsx")
 
 def scrape_directv(mode="headless"):
@@ -39,7 +38,7 @@ def scrape_directv(mode="headless"):
         print("Opened set zipcode window...")
         
         # Set zipcode and submit, page will be refreshed
-        set_zipcode(driver, ZIPCODE, zip_input_id=ZIP_INPUT_ID)
+        set_zipcode(driver, ZIPCODE, (By.ID, ZIP_INPUT_ID))
 
         set_zipcode_button = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.XPATH, f"//a[@aria-label='{SET_ZIP_LINK_BUTTON_ARIA_LABEL}']"))

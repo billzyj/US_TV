@@ -1,6 +1,5 @@
 import os
 import time
-import re
 import pandas as pd
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -18,7 +17,8 @@ PACKAGE_CONTAINERS = {
 }
 LEARN_MORE_BUTTON_CLASS = "details-button"
 SHOW_MORE_BUTTON_CLASS = "css-t5itrl"
-CHANNEL_DIV_CLASS = ".css-1tqzony"
+CHANNELS_DIV_CLASS = "css-1tqzony"
+CHANNEL_CLASS = "css-d9cqmo"
 IMG_TAG = "img"
 CLOSE_POPUP_BUTTON_ARIA = "Close"
 OUTPUT_FILE = os.path.join(OUTPUT_DIR, "FuboTVChannelList.xlsx")
@@ -38,7 +38,8 @@ def scrape_fubo_tv(mode="headless"):
             driver.refresh()
             time.sleep(1)  # Give time for elements to reload
 
-            set_zipcode(driver, ZIPCODE, zip_input_id=ZIP_INPUT_ID)
+            set_zipcode(driver, ZIPCODE, (By.ID, ZIP_INPUT_ID))
+            time.sleep(1)
 
             # Re-locate plan container to prevent stale element reference
             plan_container = WebDriverWait(driver, 10).until(
@@ -59,27 +60,26 @@ def scrape_fubo_tv(mode="headless"):
             time.sleep(1)
             print("Show more button clicked")
 
-            # Extract channel content using JavaScript
-            modal_content = driver.execute_script(f"""
-                let modal = document.querySelector('{CHANNEL_DIV_CLASS}');
-                return modal ? modal.innerHTML : 'Not Found';
-            """)
-            
-            # If content is not found, exit script
-            if modal_content == "Not Found" or modal_content.strip() == "":
-                print("Error: Channel list not found.")
-                driver.quit()
-                exit()
-
-            # Extract channel names from inner html
-            channels = set(re.findall(r'title="([^"]+)"', modal_content))
+            channels_div = WebDriverWait(driver, 30).until(
+                EC.presence_of_element_located((By.CLASS_NAME, CHANNELS_DIV_CLASS))
+            )
+            # Extract channel names
+            channels = channels_div.find_elements(By.CLASS_NAME, CHANNEL_CLASS)
             print(f"Extracted {len(channels)} channels for {plan}.")
 
             # Store channel presence in dictionary
             for channel in channels:
-                if channel not in all_channels:
-                    all_channels[channel] = {plan_key: "" for plan_key in PACKAGE_CONTAINERS.keys()}  # Dynamic keys
-                all_channels[channel][plan] = "√"
+                try:
+                    img_element = channel.find_element(By.TAG_NAME, "img")
+                    # Extract only the name after "-"
+                    channel_name = img_element.get_attribute('title')
+
+                    # Store channel in dictionary (mark available in this package)
+                    if channel_name not in all_channels:
+                        all_channels[channel_name] = {pkg: "" for pkg in PACKAGE_CONTAINERS.keys()}  # Initialize row
+                    all_channels[channel_name][plan] = "✔"  # Mark availability
+                except Exception as e:
+                    print(f"Error extracting channel name: {e}")
 
             # Re-locate and close the pop-up before moving to the next plan
             close_button = WebDriverWait(driver, 10).until(

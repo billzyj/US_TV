@@ -9,8 +9,8 @@ from src.DishTV import scrape_dishtv
 if __name__ == "__main__":
     #scrape_directv('gui')
     #scrape_directv_stream('gui')
-    scrape_dishtv('gui')
-    #scrape_fubo_tv()
-    #scrape_hulu_tv()
-    #scrape_sling_tv()
-    #scrape_youtube_tv()
+    #scrape_dishtv('gui')
+    #scrape_fubo_tv('')
+    #scrape_hulu_tv('')
+    scrape_sling_tv('')
+    #scrape_youtube_tv('')

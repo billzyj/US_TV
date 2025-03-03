@@ -5,7 +5,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, move_mouse_randomly, run_webdriver, set_zipcode
+from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, run_webdriver, set_zipcode
 
 # Variables for flexibility
 DISH_URL = "https://www.dish.com/"
@@ -52,25 +52,20 @@ def scrape_dishtv(mode="headless"):
         # Iterate over each package to scrape channels
         for package_name, package_url in packages.items():
             print(f"Processing package: {package_name}...")
-
             driver.get(package_url)  # Navigate to package page
-            # Locate the ZIP code input box
-            zip_input_box = WebDriverWait(driver, 20).until(
-                EC.presence_of_element_located((By.XPATH, f"//input[@aria-label='{ZIP_INPUT_ARIA_LABEL}']"))
-            )
 
             # Set ZIP code and mimic "Enter" key press
-            set_zipcode(driver, ZIPCODE, zip_class=ZIP_INPUT_CLASS)
+            zip_input_box = set_zipcode(driver, ZIPCODE, (By.XPATH, f"//input[@aria-label='{ZIP_INPUT_ARIA_LABEL}']"))
             zip_input_box.send_keys(Keys.ENTER)  # Simulate pressing Enter
+            time.sleep(3)  # Ensure the page fully loads
 
-            # Locate the channels list
-            channels_div = WebDriverWait(driver, 20).until(
+            channels_div = WebDriverWait(driver, 30).until(
                 EC.presence_of_element_located((By.CLASS_NAME, CHANNELS_DIV_CLASS))
             )
-
             # Extract channel names
             channels = channels_div.find_elements(By.CLASS_NAME, CHANNEL_CLASS)
             print(f"Found {len(channels)} channels:")
+            
             for channel in channels:
                 try:
                     channel_name = channel.find_element(By.TAG_NAME, "p").text.strip()

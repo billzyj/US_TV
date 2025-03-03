@@ -2,14 +2,13 @@ import os
 import re
 import time
 import pandas as pd
-from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from src.WebDriverUtils import run_webdriver, OUTPUT_DIR, click_button
+from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, click_button, run_webdriver
 
 # Variables for flexibility
-YOUTUBE_TV_URL = "https://tv.youtube.com/welcome/?utm_servlet=prod&rd_rsn=asi&zipcode=79423"
+YOUTUBE_TV_URL = f"https://tv.youtube.com/welcome/?utm_servlet=prod&rd_rsn=asi&zipcode={ZIPCODE}"
 ZIPCODE = "79423"
 MODAL_SELECTOR = "tv-network-browser-matrix"
 CONTENT_DIV_CLASS = "tv-network-matrix__body"

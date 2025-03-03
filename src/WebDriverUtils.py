@@ -42,14 +42,6 @@ def run_webdriver(mode="headless"):
     service = Service(ChromeDriverManager().install())
     return webdriver.Chrome(service=service, options=chrome_options)
 
-def move_mouse_randomly(driver):
-    actions = ActionChains(driver)
-    for _ in range(random.randint(5, 10)):
-        x_offset = random.randint(-20, 20)
-        y_offset = random.randint(-20, 20)
-        actions.move_by_offset(x_offset, y_offset).perform()
-        time.sleep(random.uniform(0.1, 0.5))
-
 def click_button(driver, button):
     try:
         """Ensure the button is clickable by scrolling into view and clicking via JavaScript."""
@@ -59,25 +51,8 @@ def click_button(driver, button):
     except Exception as e:
         print(f"Error: {e}")
 
-def set_zipcode(driver, zipcode, zip_input_id=None, zip_class=None):
-    """Ensures the correct ZIP code is set before loading channel data.
-    
-    - Tries `zip_input_id` first if provided.
-    - Falls back to `zip_class` if `zip_input_id` is not available.
-    """
-
+def set_zipcode(driver, zipcode, locator):
     print("Setting ZIP code...")
-
-    if not zip_input_id and not zip_class:
-        raise ValueError("You must provide either zip_input_id or zip_class.")
-    
-    # Determine locator strategy dynamically
-    if zip_input_id:
-        locator = (By.ID, zip_input_id)
-    elif zip_class:
-        locator = (By.CLASS_NAME, zip_class)
-    else:
-        raise ValueError("Both zip_input_id and zip_class cannot be None. Provide at least one.")
 
     # Wait for the ZIP input field to appear
     zip_input = WebDriverWait(driver, 10).until(
@@ -95,7 +70,7 @@ def set_zipcode(driver, zipcode, zip_input_id=None, zip_class=None):
         zip_input.send_keys(char)
         time.sleep(0.1)  # Simulates real typing speed
     print("ZIP code typed successfully.")
-
+    return zip_input
     # zip_input.clear()
     # # Set the ZIP code and trigger JavaScript input events
     # driver.execute_script(f"""
@@ -103,13 +78,7 @@ def set_zipcode(driver, zipcode, zip_input_id=None, zip_class=None):
     #     arguments[0].dispatchEvent(new Event('input'));
     # """, zip_input)
 
-    # time.sleep(1)  # Allow JavaScript to update content
-    # print("ZIP code set successfully.")
-
-# Scroll down incrementally to ensure all channels are loaded
-import time
-
-def smooth_scroll_to_bottom(driver, scroll_step=1000, wait_time=0.2):
+def smooth_scroll_to_bottom(driver, scroll_step=1000, wait_time=0.25):
     """
     Smoothly scrolls from top to bottom in steps, even if document.body.scrollHeight is fixed.
     
@@ -135,3 +104,11 @@ def smooth_scroll_to_bottom(driver, scroll_step=1000, wait_time=0.2):
         time.sleep(wait_time)  # Allow content to load smoothly
 
     print("Finished scrolling to the bottom.")
+
+def move_mouse_randomly(driver):
+    actions = ActionChains(driver)
+    for _ in range(random.randint(5, 10)):
+        x_offset = random.randint(-20, 20)
+        y_offset = random.randint(-20, 20)
+        actions.move_by_offset(x_offset, y_offset).perform()
+        time.sleep(random.uniform(0.1, 0.5))

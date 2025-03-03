@@ -3,7 +3,7 @@ import pandas as pd
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, run_webdriver, move_mouse_randomly, click_button, set_zipcode, smooth_scroll_to_bottom
+from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, run_webdriver, click_button, set_zipcode, smooth_scroll_to_bottom
 
 # Variables for flexibility
 DIRECTV_STREAM_URL = "https://streamtv.directv.com/channels/modal/"
@@ -35,7 +35,7 @@ def scrape_directv_stream(mode="headless"):
         print("Opened set zipcode window...")
         
         # Set zipcode and submit, page will be refreshed
-        set_zipcode(driver, ZIPCODE, zip_input_id=ZIP_INPUT_ID)
+        set_zipcode(driver, ZIPCODE, (By.ID, ZIP_INPUT_ID))
 
         set_zipcode_button = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.XPATH, f"//a[@aria-label='{SET_ZIP_LINK_BUTTON_ARIA_LABEL}']"))

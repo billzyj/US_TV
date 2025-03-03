@@ -32,7 +32,7 @@ def scrape_hulu_tv(mode="headless"):
         time.sleep(1)
         
         # Set to specified zipcode
-        set_zipcode(driver, ZIPCODE, zip_input_id=ZIP_INPUT_ID)
+        set_zipcode(driver, ZIPCODE, (By.ID, ZIP_INPUT_ID))
         channel_submit_button = WebDriverWait(driver, 20).until(
             EC.element_to_be_clickable((By.CLASS_NAME, ZIP_SUBMIT_CLASS))
         )
@@ -66,5 +66,3 @@ def scrape_hulu_tv(mode="headless"):
 
     finally:
         driver.quit()
-
-    
