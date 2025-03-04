@@ -5,7 +5,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, run_webdriver, set_zipcode
+from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, load_page, set_zipcode
 
 # Variables for flexibility
 DISH_URL = "https://www.dish.com/"
@@ -19,10 +19,7 @@ OUTPUT_FILE = os.path.join(OUTPUT_DIR, "DishTVChannelList.xlsx")
 
 def scrape_dishtv(mode="headless"):
     """Scrapes live channel data from DishTV."""
-    print("Web scraping DishTV...")
-    driver = run_webdriver(mode)
-    driver.get(DISH_URL)
-    print("Waiting for page to load...")
+    driver = load_page(mode, "DishTV", DISH_URL)
 
     try:
         all_channels = {}  # Dictionary to store channels across packages

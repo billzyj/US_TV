@@ -4,7 +4,7 @@ import pandas as pd
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, run_webdriver, click_button, set_zipcode
+from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, load_page, click_button, set_zipcode
 
 
 # Variables for flexibility
@@ -24,9 +24,8 @@ CLOSE_POPUP_BUTTON_ARIA = "Close"
 OUTPUT_FILE = os.path.join(OUTPUT_DIR, "FuboTVChannelList.xlsx")
 
 def scrape_fubo_tv(mode="headless"):
-    print("Web scraping FuboTV...")
-    driver = run_webdriver(mode)
-    driver.get(FUBO_URL)
+    """Scrapes live channel data from FuboTV."""
+    driver = load_page(mode, "FuboTV", FUBO_URL)
 
     try:        
         all_channels = {}

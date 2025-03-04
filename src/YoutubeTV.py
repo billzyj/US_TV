@@ -5,7 +5,7 @@ import pandas as pd
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, click_button, run_webdriver
+from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, load_page, click_button
 
 # Variables for flexibility
 YOUTUBE_TV_URL = f"https://tv.youtube.com/welcome/?utm_servlet=prod&rd_rsn=asi&zipcode={ZIPCODE}"
@@ -16,9 +16,8 @@ COMPARE_BUTTON_CLASS = "tv-network-browser__input-area-submit"
 OUTPUT_FILE = os.path.join(OUTPUT_DIR, "YoutubeTVChannelList.xlsx")
 
 def scrape_youtube_tv(mode="headless"):
-    print("Web scraping YoutubeTV...")
-    driver = run_webdriver(mode)
-    driver.get(YOUTUBE_TV_URL)
+    """Scrapes live channel data from YoutubeTV."""
+    driver = load_page(mode, "YoutubeTV", YOUTUBE_TV_URL)
     
     try:
         print("Waiting for youtube page to load...")

@@ -4,7 +4,7 @@ import pandas as pd
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, run_webdriver, click_button, set_zipcode
+from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, load_page, click_button, set_zipcode
 
 # Variables for flexibility
 HULU_URL = "https://www.hulu.com/welcome"
@@ -16,10 +16,8 @@ SPAN_CLASS = "NetworkIcon__network-name-invisible"
 OUTPUT_FILE = os.path.join(OUTPUT_DIR, "HuluTVChannelList.xlsx")
 
 def scrape_hulu_tv(mode="headless"):
-    print("Web scraping HuluTV...")
-    driver = run_webdriver(mode)
-    driver.get(HULU_URL)
-    print("Waiting for page to load...")
+    """Scrapes live channel data from HuluTV."""
+    driver = load_page(mode, "HuluTV", HULU_URL)
 
     try:
         # Locate and click the "View Channels" button

@@ -4,7 +4,7 @@ import pandas as pd
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, run_webdriver, click_button, set_zipcode
+from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, load_page, click_button, set_zipcode
 
 # Variables for flexibility
 SLING_URL = "https://www.sling.com/channels"
@@ -13,24 +13,10 @@ IMG_TAG = "img"
 OUTPUT_FILE = os.path.join(OUTPUT_DIR, "SlingTVChannelList.xlsx")
 
 def scrape_sling_tv(mode="headless"):
-    print("Web scraping SlingTV...")
-    driver = run_webdriver(mode)
-    driver.get(SLING_URL)
-    print("Waiting for page to load...")
-
+    """Scrapes live channel data from SlingTV."""
+    driver = load_page(mode, "SlingTV", SLING_URL, check_popup = True, close_locator = (By.XPATH, "//button[@type='reset']"), sleep_time = 1)
+    
     try:
-        print("Checking for promotion pop-up...")
-        try:
-            # Locate pop-up close button
-            close_popup_button = WebDriverWait(driver, 5).until(
-                EC.element_to_be_clickable((By.XPATH, "//button[@type='reset']"))
-            )
-            click_button(driver, close_popup_button)
-            print("Closed promotion pop-up.")
-            time.sleep(1)
-        except:
-            print("No pop-up found, proceeding.")
-
         # Locate and click the "Compare Plans" button
         print("Locating Compare Plans button...")
         compare_plans_button = driver.find_element(By.XPATH, "//button[.//p[contains(text(), 'Compare Plans')]]")

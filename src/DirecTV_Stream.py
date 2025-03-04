@@ -3,7 +3,7 @@ import pandas as pd
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, run_webdriver, click_button, set_zipcode, smooth_scroll_to_bottom
+from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, load_page, click_button, set_zipcode, smooth_scroll_to_bottom
 
 # Variables for flexibility
 DIRECTV_STREAM_URL = "https://streamtv.directv.com/channels/modal/"
@@ -20,10 +20,7 @@ OUTPUT_FILE = os.path.join(OUTPUT_DIR, "DirecTVStreamChannelList.xlsx")
 
 def scrape_directv_stream(mode="headless"):
     """Scrapes live channel data from DirecTV Stream."""
-    print("Web scraping DirecTV Stream...")
-    driver = run_webdriver(mode)
-    driver.get(DIRECTV_STREAM_URL)
-    print("Waiting for page to load...")
+    driver = load_page(mode, "DirecTV Stream", DIRECTV_STREAM_URL)
 
     try:
         # Locate and click the zipcode link
