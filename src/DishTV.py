@@ -5,7 +5,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, load_page, set_zipcode
+from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, load_page, set_zipcode, write_to_excel
 
 # Variables for flexibility
 DISH_URL = "https://www.dish.com/"
@@ -77,25 +77,26 @@ def scrape_dishtv(mode="headless"):
                     print(f"Error extracting channel name: {e}")
 
         # Convert dictionary to DataFrame
-        df = pd.DataFrame.from_dict(all_channels, orient="index")
-        df.index.name = "Channel Name"
+        df_dishtv = pd.DataFrame.from_dict(all_channels, orient="index")
+        df_dishtv.index.name = "Channel Name"
 
         # Save to Excel with a frozen first row and filtering enabled
-        with pd.ExcelWriter(OUTPUT_FILE, engine="xlsxwriter") as writer:
-            df.to_excel(writer, sheet_name="DishTV Channels")
+        write_to_excel(df_dishtv, OUTPUT_FILE, sheet_name="DishTV Channels")
+        # with pd.ExcelWriter(OUTPUT_FILE, engine="xlsxwriter") as writer:
+        #     df.to_excel(writer, sheet_name="DishTV Channels")
 
-            # Get the workbook and worksheet objects
-            workbook = writer.book
-            worksheet = writer.sheets["DishTV Channels"]
+        #     # Get the workbook and worksheet objects
+        #     workbook = writer.book
+        #     worksheet = writer.sheets["DishTV Channels"]
 
-            # Freeze the first row (header)
-            worksheet.freeze_panes(1, 0)
+        #     # Freeze the first row (header)
+        #     worksheet.freeze_panes(1, 0)
 
-            # Enable filtering in Excel (sortable by channel name A-Z)
-            column_count = len(df.columns)
-            worksheet.autofilter(0, 0, len(df), column_count - 1)
+        #     # Enable filtering in Excel (sortable by channel name A-Z)
+        #     column_count = len(df.columns)
+        #     worksheet.autofilter(0, 0, len(df), column_count - 1)
         
-        print(f"Scraped data saved to: {OUTPUT_FILE}")
+        # print(f"Scraped data saved to: {OUTPUT_FILE}")
 
     except Exception as e:
         print(f"Error: {e}")

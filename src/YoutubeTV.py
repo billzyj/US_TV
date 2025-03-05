@@ -5,7 +5,7 @@ import pandas as pd
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, load_page, click_button
+from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, load_page, click_element, write_to_excel
 
 # Variables for flexibility
 YOUTUBE_TV_URL = f"https://tv.youtube.com/welcome/?utm_servlet=prod&rd_rsn=asi&zipcode={ZIPCODE}"
@@ -28,7 +28,7 @@ def scrape_youtube_tv(mode="headless"):
         compare_button = WebDriverWait(driver, 15).until(
             EC.element_to_be_clickable((By.CLASS_NAME, COMPARE_BUTTON_CLASS))
         )
-        click_button(driver, compare_button)
+        click_element(driver, (By.CLASS_NAME, COMPARE_BUTTON_CLASS))
 
         print("Compare plans window opened successfully.")
 
@@ -62,12 +62,7 @@ def scrape_youtube_tv(mode="headless"):
         df_youtube_tv = pd.DataFrame(channel_names, columns=["Channel Name"])
 
         # Save to excel with formatting
-        with pd.ExcelWriter(OUTPUT_FILE, engine="xlsxwriter") as writer:
-            df_youtube_tv.to_excel(writer, sheet_name="YouTube TV Channels", index=False)
-            worksheet = writer.sheets["YouTube TV Channels"]
-            worksheet.freeze_panes(1, 0)  # Freeze the first row
-
-        print(f"Excel file saved successfully: {OUTPUT_FILE}")
+        write_to_excel(df_youtube_tv, OUTPUT_FILE, sheet_name="YoutubeTV Channels")
 
     except Exception as e:
         print(f"Error: {e}")

@@ -4,11 +4,11 @@ import pandas as pd
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, load_page, click_button, set_zipcode
+from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, load_page, click_element, set_zipcode, write_to_excel
 
 # Variables for flexibility
 SLING_URL = "https://www.sling.com/channels"
-PLAN_DIV_CLASS = "sc-RpuvT"
+PLAN_DIV_CLASS = "sc-FQuPU"
 IMG_TAG = "img"
 OUTPUT_FILE = os.path.join(OUTPUT_DIR, "SlingTVChannelList.xlsx")
 
@@ -20,7 +20,7 @@ def scrape_sling_tv(mode="headless"):
         # Locate and click the "Compare Plans" button
         print("Locating Compare Plans button...")
         compare_plans_button = driver.find_element(By.XPATH, "//button[.//p[contains(text(), 'Compare Plans')]]")
-        click_button(driver, compare_plans_button)
+        click_element(driver, (By.XPATH, "//button[.//p[contains(text(), 'Compare Plans')]]"))
         print("Opened Compare Plans window...")
         time.sleep(1)
         
@@ -66,13 +66,14 @@ def scrape_sling_tv(mode="headless"):
         df_sling_tv.columns = ["Channel Name", "Orange", "Blue", "Both"]
 
         # Save to Excel
-        with pd.ExcelWriter(OUTPUT_FILE, engine="xlsxwriter") as writer:
-            df_sling_tv.to_excel(writer, sheet_name="SlingTV Channels", index=False)
-            worksheet = writer.sheets["SlingTV Channels"]
-            worksheet.freeze_panes(1, 0)  # Freeze the first row
-            worksheet.autofilter(0, 0, len(df_sling_tv), len(df_sling_tv.columns) - 1)  # Enable filtering
+        write_to_excel(df_sling_tv, OUTPUT_FILE, sheet_name="SlingTV Channels")
+        # with pd.ExcelWriter(OUTPUT_FILE, engine="xlsxwriter") as writer:
+        #     df_sling_tv.to_excel(writer, sheet_name="SlingTV Channels", index=False)
+        #     worksheet = writer.sheets["SlingTV Channels"]
+        #     worksheet.freeze_panes(1, 0)  # Freeze the first row
+        #     worksheet.autofilter(0, 0, len(df_sling_tv), len(df_sling_tv.columns) - 1)  # Enable filtering
 
-        print(f"Excel file saved successfully: {OUTPUT_FILE}")
+        # print(f"Excel file saved successfully: {OUTPUT_FILE}")
 
     except Exception as e:
         print(f"Error: {e}")

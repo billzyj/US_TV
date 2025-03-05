@@ -3,7 +3,7 @@ import pandas as pd
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, load_page, click_button, set_zipcode, smooth_scroll_to_bottom
+from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, load_page, click_element, set_zipcode, smooth_scroll_to_bottom, write_to_excel
 
 # Variables for flexibility
 DIRECTV_URL = "https://www.directv.com/channel-lineup/"
@@ -27,20 +27,11 @@ def scrape_directv(mode="headless"):
 
     try:
         # Locate and click the zipcode link
-        print("Locating set zipcode link...")
-        set_zip_link = WebDriverWait(driver, 20).until(
-            EC.element_to_be_clickable((By.CLASS_NAME, SET_ZIP_LINK_CLASS))
-        )
-        click_button(driver, set_zip_link)
+        click_element(driver, (By.CLASS_NAME, SET_ZIP_LINK_CLASS))
         print("Opened set zipcode window...")
         
         # Set zipcode and submit, page will be refreshed
-        set_zipcode(driver, ZIPCODE, (By.ID, ZIP_INPUT_ID))
-
-        set_zipcode_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.XPATH, f"//a[@aria-label='{SET_ZIP_LINK_BUTTON_ARIA_LABEL}']"))
-        )
-        click_button(driver, set_zipcode_button)
+        set_zipcode(driver, ZIPCODE, (By.ID, ZIP_INPUT_ID), (By.XPATH, f"//a[@aria-label='{SET_ZIP_LINK_BUTTON_ARIA_LABEL}']"))
 
         smooth_scroll_to_bottom(driver)
         
@@ -100,13 +91,7 @@ def scrape_directv(mode="headless"):
         df_directv = df_directv.sort_values(by=["Channel Name"])
 
         # Write to Excel File
-        with pd.ExcelWriter(OUTPUT_FILE, engine="xlsxwriter") as writer:
-            df_directv.to_excel(writer, sheet_name="DirecTV Channels", index=False)
-            worksheet = writer.sheets["DirecTV Channels"]
-            worksheet.freeze_panes(1, 0)  # Freeze the first row
-            worksheet.autofilter(0, 0, len(df_directv), len(df_directv.columns) - 1)  # Enable sorting for Channel Name
-
-        print(f"Excel file saved successfully: {OUTPUT_FILE}")
+        write_to_excel(df_directv, OUTPUT_FILE, sheet_name="DirecTV Channels")
 
     except Exception as e:
         print(f"Error: {e}")

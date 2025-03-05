@@ -1,5 +1,7 @@
 import os
 import time
+import random
+import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
@@ -9,8 +11,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
-import random
-import time
+
+
 
 # Output directory
 ZIPCODE = "79423"
@@ -55,72 +57,63 @@ def load_page(mode, page_name, page_url, check_popup = False, close_locator = No
 def handle_popup(driver, close_locator):
     print("Checking for promotion pop-up...")
     try:
-        # Locate pop-up close button
-        close_popup_button = WebDriverWait(driver, 5).until(
-            EC.element_to_be_clickable(close_locator)
-        )
-        click_button(driver, close_popup_button)
+        click_element(driver, close_locator)
         print("Closed promotion pop-up.")
         time.sleep(1)
     except:
         print("No pop-up found, proceeding.")
     return driver
 
-def click_button(driver, button):
+def click_element(driver, element_locator, element_container = None):
     try:
+        # Locate element
+        if element_container:
+            element = WebDriverWait(element_container, 10).until(
+                EC.element_to_be_clickable(element_locator)
+            )
+        else :
+            element = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable(element_locator)
+            )
         """Ensure the button is clickable by scrolling into view and clicking via JavaScript."""
-        driver.execute_script("arguments[0].scrollIntoView();", button)  # Scroll to button
+        driver.execute_script("arguments[0].scrollIntoView();", element)  # Scroll to button
         time.sleep(1)  # Give time for scrolling animation
-        driver.execute_script("arguments[0].click();", button)  # Click using JS
+        driver.execute_script("arguments[0].click();", element)  # Click using JS
     except Exception as e:
         print(f"Error: {e}")
 
-def set_zipcode(driver, zipcode, locator):
-    print("Setting ZIP code...")
+def set_zipcode(driver, zipcode, input_locator, submit_locator=None):
+    """Sets the ZIP code and submits if required."""
+    try:
+        print("Setting ZIP code...")
 
-    # Wait for the ZIP input field to appear
-    zip_input = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located(locator)
-    )
+        # Wait for the ZIP input field to appear
+        zip_input = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located(input_locator)
+        )
 
-    print("Located ZIP input field")
+        print("Located ZIP input field")
 
-    # Select all and delete existing text (to avoid stale values)
-    zip_input.send_keys(Keys.CONTROL + "a")  # Select all
-    zip_input.send_keys(Keys.BACKSPACE)  # Clear input
+        # Select all and delete existing text (to avoid stale values)
+        zip_input.send_keys(Keys.CONTROL + "a")  # Select all
+        zip_input.send_keys(Keys.BACKSPACE)  # Clear input
 
-    # Simulate typing character by character
-    for char in zipcode:
-        zip_input.send_keys(char)
-        time.sleep(0.1)  # Simulates real typing speed
-    print("ZIP code typed successfully.")
+        # Simulate typing character by character
+        for char in zipcode:
+            zip_input.send_keys(char)
+            time.sleep(0.1)  # Simulates real typing speed
+        print("ZIP code typed successfully.")
+
+        if submit_locator:
+            submit_button = WebDriverWait(driver, 5).until(
+                EC.element_to_be_clickable(submit_locator)
+            )
+            click_element(driver, submit_button)
+
+        print(f"ZIP code {zipcode} set successfully.")
+    except Exception as e:
+        print(f"Error setting ZIP code: {e}")
     return zip_input
-    # zip_input.clear()
-    # # Set the ZIP code and trigger JavaScript input events
-    # driver.execute_script(f"""
-    #     arguments[0].value = '{zipcode}'; 
-    #     arguments[0].dispatchEvent(new Event('input'));
-    # """, zip_input)
-
-# def set_zipcode(driver, zipcode, input_locator, submit_locator=None):
-#     """Sets the ZIP code and submits if required."""
-#     try:
-#         zip_input = WebDriverWait(driver, 10).until(
-#             EC.presence_of_element_located(input_locator)
-#         )
-#         zip_input.clear()
-#         zip_input.send_keys(zipcode)
-#         time.sleep(1)
-
-#         if submit_locator:
-#             submit_button = WebDriverWait(driver, 5).until(
-#                 EC.element_to_be_clickable(submit_locator)
-#             )
-#             click_button(driver, submit_button)
-
-#         print(f"ZIP code {zipcode} set successfully.")
-#     except Exception as e:
-#         print(f"Error setting ZIP code: {e}")
 
 def smooth_scroll_to_bottom(driver, scroll_step=1000, wait_time=0.25):
     """

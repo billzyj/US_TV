@@ -4,14 +4,14 @@ import pandas as pd
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, load_page, click_button, set_zipcode
+from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, load_page, click_element, set_zipcode, write_to_excel
 
 
 # Variables for flexibility
 FUBO_URL = "https://fubo.tv/welcome"
 ZIP_INPUT_ID = "react-aria-5"
 PACKAGE_CONTAINERS = {
-    "Essential": "package-container-us-essential-mo-v1",
+#    "Essential": "package-container-us-essential-mo-v1",
     "Pro": "package-container-us-pro",
     "Elite": "package-container-us-elite-v2",
 }
@@ -46,16 +46,13 @@ def scrape_fubo_tv(mode="headless"):
             )
 
             # Re-locate the "Learn More" button before clicking
-            learn_more_button = plan_container.find_element(By.CLASS_NAME, LEARN_MORE_BUTTON_CLASS)
-            click_button(driver, learn_more_button)
+            #learn_more_button = plan_container.find_element(By.CLASS_NAME, LEARN_MORE_BUTTON_CLASS)
+            click_element(driver, (By.XPATH, f"//button[@aria-label='Learn more']"), plan_container)
             time.sleep(1)
             print("Learn more button clicked")
 
             # Re-locate the "Show More" button before clicking
-            show_more_button = WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.CLASS_NAME, SHOW_MORE_BUTTON_CLASS))
-            )
-            click_button(driver, show_more_button)
+            click_element(driver, (By.CLASS_NAME, SHOW_MORE_BUTTON_CLASS))
             time.sleep(1)
             print("Show more button clicked")
 
@@ -84,7 +81,7 @@ def scrape_fubo_tv(mode="headless"):
             close_button = WebDriverWait(driver, 10).until(
                 EC.element_to_be_clickable((By.XPATH, f"//button[@aria-label='{CLOSE_POPUP_BUTTON_ARIA}']"))
             )
-            click_button(driver, close_button)
+            click_element(driver, close_button)
             print("Channel list closed")
 
         # Convert dictionary to DataFrame
@@ -92,13 +89,14 @@ def scrape_fubo_tv(mode="headless"):
         df_fubo_tv.columns = ["Channel Name"] + list(PACKAGE_CONTAINERS.keys())
 
         # Save to Excel in a single sheet
-        with pd.ExcelWriter(OUTPUT_FILE, engine="xlsxwriter") as writer:
-            df_fubo_tv.to_excel(writer, sheet_name="FuboTV Channels", index=False)
-            worksheet = writer.sheets["FuboTV Channels"]
-            worksheet.freeze_panes(1, 0)  # Freeze the first row
-            worksheet.autofilter(0, 0, len(df_fubo_tv), len(df_fubo_tv.columns) - 1)  # Sort only "Channel Name"
+        write_to_excel(df_fubo_tv, OUTPUT_FILE, sheet_name="FuboTV Channels")
+        # with pd.ExcelWriter(OUTPUT_FILE, engine="xlsxwriter") as writer:
+        #     df_fubo_tv.to_excel(writer, sheet_name="FuboTV Channels", index=False)
+        #     worksheet = writer.sheets["FuboTV Channels"]
+        #     worksheet.freeze_panes(1, 0)  # Freeze the first row
+        #     worksheet.autofilter(0, 0, len(df_fubo_tv), len(df_fubo_tv.columns) - 1)  # Sort only "Channel Name"
             
-        print(f"Excel file saved successfully: {OUTPUT_FILE}")
+        # print(f"Excel file saved successfully: {OUTPUT_FILE}")
     
     except Exception as e:
         print(f"ERROR: {e}")

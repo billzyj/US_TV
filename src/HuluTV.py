@@ -4,7 +4,7 @@ import pandas as pd
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, load_page, click_button, set_zipcode
+from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, load_page, click_element, set_zipcode, write_to_excel
 
 # Variables for flexibility
 HULU_URL = "https://www.hulu.com/welcome"
@@ -25,16 +25,16 @@ def scrape_hulu_tv(mode="headless"):
         channel_button = WebDriverWait(driver, 20).until(
             EC.element_to_be_clickable((By.CLASS_NAME, VIEW_CHANNELS_BUTTON_CLASS))
         )
-        click_button(driver, channel_button)
+        click_element(driver, (By.CLASS_NAME, VIEW_CHANNELS_BUTTON_CLASS))
         print("Opened Channel Plans window...")
         time.sleep(1)
         
         # Set to specified zipcode
-        set_zipcode(driver, ZIPCODE, (By.ID, ZIP_INPUT_ID))
-        channel_submit_button = WebDriverWait(driver, 20).until(
-            EC.element_to_be_clickable((By.CLASS_NAME, ZIP_SUBMIT_CLASS))
-        )
-        click_button(driver, channel_submit_button)
+        set_zipcode(driver, ZIPCODE, (By.ID, ZIP_INPUT_ID), (By.CLASS_NAME, ZIP_SUBMIT_CLASS))
+        # channel_submit_button = WebDriverWait(driver, 20).until(
+        #     EC.element_to_be_clickable((By.CLASS_NAME, ZIP_SUBMIT_CLASS))
+        # )
+        # click_element(driver, channel_submit_button)
 
         # Locate the unique container div
         channels_div = WebDriverWait(driver, 10).until(
@@ -51,13 +51,7 @@ def scrape_hulu_tv(mode="headless"):
         df_hulu_tv = pd.DataFrame(channel_names, columns=["Channel Name"])
 
         # Save to excel with formatting
-        with pd.ExcelWriter(OUTPUT_FILE, engine="xlsxwriter") as writer:
-            df_hulu_tv.to_excel(writer, sheet_name="Hulu TV Channels", index=False)
-            worksheet = writer.sheets["Hulu TV Channels"]
-            worksheet.freeze_panes(1, 0)  # Freeze the first row
-
-        print(f"Excel file saved successfully: {OUTPUT_FILE}")
-
+        write_to_excel(df_hulu_tv, OUTPUT_FILE, sheet_name="HuluTV Channels")
 
     except Exception as e:
         print(f"Error: {e}")
