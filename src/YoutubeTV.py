@@ -21,15 +21,10 @@ def scrape_youtube_tv(mode="headless"):
     
     try:
         print("Waiting for youtube page to load...")
-        time.sleep(2)  # Allow JavaScript execution
+        time.sleep(1)  # Allow JavaScript execution
 
         # Locate and click the compare plans button
-        print("Locating compare plans button...")
-        compare_button = WebDriverWait(driver, 15).until(
-            EC.element_to_be_clickable((By.CLASS_NAME, COMPARE_BUTTON_CLASS))
-        )
         click_element(driver, (By.CLASS_NAME, COMPARE_BUTTON_CLASS))
-
         print("Compare plans window opened successfully.")
 
         # Wait for channel list to load in modal

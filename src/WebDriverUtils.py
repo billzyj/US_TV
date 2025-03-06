@@ -12,9 +12,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 
-
-
-# Output directory
+# Shared variables
 ZIPCODE = "79423"
 OUTPUT_DIR = "./output"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -68,9 +66,7 @@ def click_element(driver, element_locator, element_container = None):
     try:
         # Locate element
         if element_container:
-            element = WebDriverWait(element_container, 10).until(
-                EC.element_to_be_clickable(element_locator)
-            )
+            element = element_container.find_element(element_locator[0], element_locator[1])
         else :
             element = WebDriverWait(driver, 10).until(
                 EC.element_to_be_clickable(element_locator)

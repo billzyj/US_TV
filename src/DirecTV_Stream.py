@@ -36,7 +36,7 @@ def scrape_directv_stream(mode="headless"):
         channels_header = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.ID, CHANNELS_TABLE_HEADER_ID))
         )
-
+        print(f"Header located")
         # Extract package plans from table header dynamically
         packages = []
         package_headers = channels_header.find_elements(By.TAG_NAME, "th")

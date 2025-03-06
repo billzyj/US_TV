@@ -6,11 +6,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, load_page, click_element, set_zipcode, write_to_excel
 
-
 # Variables for flexibility
 FUBO_URL = "https://fubo.tv/welcome"
 ZIP_INPUT_ID = "react-aria-5"
-PACKAGE_CONTAINERS = {
+PLAN_CONTAINERS = {
 #    "Essential": "package-container-us-essential-mo-v1",
     "Pro": "package-container-us-pro",
     "Elite": "package-container-us-elite-v2",
@@ -30,7 +29,7 @@ def scrape_fubo_tv(mode="headless"):
     try:        
         all_channels = {}
 
-        for plan, plan_id in PACKAGE_CONTAINERS.items():
+        for plan, plan_id in PLAN_CONTAINERS.items():
             print(f"Processing {plan} plan...")
 
             # Reload the DOM to prevent stale element reference
@@ -46,8 +45,8 @@ def scrape_fubo_tv(mode="headless"):
             )
 
             # Re-locate the "Learn More" button before clicking
-            #learn_more_button = plan_container.find_element(By.CLASS_NAME, LEARN_MORE_BUTTON_CLASS)
-            click_element(driver, (By.XPATH, f"//button[@aria-label='Learn more']"), plan_container)
+            click_element(driver, (By.CLASS_NAME, LEARN_MORE_BUTTON_CLASS), plan_container)
+            #click_element(driver, (By.XPATH, f"//button[@aria-label='Learn more']"), plan_container)
             time.sleep(1)
             print("Learn more button clicked")
 
@@ -72,7 +71,7 @@ def scrape_fubo_tv(mode="headless"):
 
                     # Store channel in dictionary (mark available in this package)
                     if channel_name not in all_channels:
-                        all_channels[channel_name] = {pkg: "" for pkg in PACKAGE_CONTAINERS.keys()}  # Initialize row
+                        all_channels[channel_name] = {pkg: "" for pkg in PLAN_CONTAINERS.keys()}  # Initialize row
                     all_channels[channel_name][plan] = "✔"  # Mark availability
                 except Exception as e:
                     print(f"Error extracting channel name: {e}")
@@ -86,7 +85,7 @@ def scrape_fubo_tv(mode="headless"):
 
         # Convert dictionary to DataFrame
         df_fubo_tv = pd.DataFrame.from_dict(all_channels, orient="index").reset_index()
-        df_fubo_tv.columns = ["Channel Name"] + list(PACKAGE_CONTAINERS.keys())
+        df_fubo_tv.columns = ["Channel Name"] + list(PLAN_CONTAINERS.keys())
 
         # Save to Excel in a single sheet
         write_to_excel(df_fubo_tv, OUTPUT_FILE, sheet_name="FuboTV Channels")

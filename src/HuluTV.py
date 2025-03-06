@@ -31,10 +31,6 @@ def scrape_hulu_tv(mode="headless"):
         
         # Set to specified zipcode
         set_zipcode(driver, ZIPCODE, (By.ID, ZIP_INPUT_ID), (By.CLASS_NAME, ZIP_SUBMIT_CLASS))
-        # channel_submit_button = WebDriverWait(driver, 20).until(
-        #     EC.element_to_be_clickable((By.CLASS_NAME, ZIP_SUBMIT_CLASS))
-        # )
-        # click_element(driver, channel_submit_button)
 
         # Locate the unique container div
         channels_div = WebDriverWait(driver, 10).until(
