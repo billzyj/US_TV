@@ -5,7 +5,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, load_page, set_zipcode, write_to_excel
+from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, extract_channel_data, load_page, set_zipcode, write_to_excel
 
 # Variables for flexibility
 DISH_URL = "https://www.dish.com/"
@@ -56,12 +56,7 @@ def scrape_dishtv(mode="headless"):
             zip_input_box.send_keys(Keys.ENTER)  # Simulate pressing Enter
             time.sleep(3)  # Ensure the page fully loads
 
-            channels_div = WebDriverWait(driver, 30).until(
-                EC.presence_of_element_located((By.CLASS_NAME, CHANNELS_DIV_CLASS))
-            )
-            # Extract channel names
-            channels = channels_div.find_elements(By.CLASS_NAME, CHANNEL_CLASS)
-            print(f"Found {len(channels)} channels:")
+            channels = extract_channel_data(driver, (By.CLASS_NAME, CHANNELS_DIV_CLASS), (By.CLASS_NAME, CHANNEL_CLASS))
             
             for channel in channels:
                 try:
@@ -81,22 +76,7 @@ def scrape_dishtv(mode="headless"):
         df_dishtv.index.name = "Channel Name"
 
         # Save to Excel with a frozen first row and filtering enabled
-        write_to_excel(df_dishtv, OUTPUT_FILE, sheet_name="DishTV Channels")
-        # with pd.ExcelWriter(OUTPUT_FILE, engine="xlsxwriter") as writer:
-        #     df.to_excel(writer, sheet_name="DishTV Channels")
-
-        #     # Get the workbook and worksheet objects
-        #     workbook = writer.book
-        #     worksheet = writer.sheets["DishTV Channels"]
-
-        #     # Freeze the first row (header)
-        #     worksheet.freeze_panes(1, 0)
-
-        #     # Enable filtering in Excel (sortable by channel name A-Z)
-        #     column_count = len(df.columns)
-        #     worksheet.autofilter(0, 0, len(df), column_count - 1)
-        
-        # print(f"Scraped data saved to: {OUTPUT_FILE}")
+        write_to_excel(df_dishtv, OUTPUT_FILE, sheet_name="DishTV Channels", index=True)
 
     except Exception as e:
         print(f"Error: {e}")

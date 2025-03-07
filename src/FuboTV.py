@@ -4,7 +4,7 @@ import pandas as pd
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, load_page, click_element, set_zipcode, write_to_excel
+from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, extract_channel_data, load_page, click_element, set_zipcode, write_to_excel
 
 # Variables for flexibility
 FUBO_URL = "https://fubo.tv/welcome"
@@ -55,12 +55,7 @@ def scrape_fubo_tv(mode="headless"):
             time.sleep(1)
             print("Show more button clicked")
 
-            channels_div = WebDriverWait(driver, 30).until(
-                EC.presence_of_element_located((By.CLASS_NAME, CHANNELS_DIV_CLASS))
-            )
-            # Extract channel names
-            channels = channels_div.find_elements(By.CLASS_NAME, CHANNEL_CLASS)
-            print(f"Extracted {len(channels)} channels for {plan}.")
+            channels = extract_channel_data(driver, (By.CLASS_NAME, CHANNELS_DIV_CLASS), (By.CLASS_NAME, CHANNEL_CLASS))
 
             # Store channel presence in dictionary
             for channel in channels:
@@ -89,13 +84,6 @@ def scrape_fubo_tv(mode="headless"):
 
         # Save to Excel in a single sheet
         write_to_excel(df_fubo_tv, OUTPUT_FILE, sheet_name="FuboTV Channels")
-        # with pd.ExcelWriter(OUTPUT_FILE, engine="xlsxwriter") as writer:
-        #     df_fubo_tv.to_excel(writer, sheet_name="FuboTV Channels", index=False)
-        #     worksheet = writer.sheets["FuboTV Channels"]
-        #     worksheet.freeze_panes(1, 0)  # Freeze the first row
-        #     worksheet.autofilter(0, 0, len(df_fubo_tv), len(df_fubo_tv.columns) - 1)  # Sort only "Channel Name"
-            
-        # print(f"Excel file saved successfully: {OUTPUT_FILE}")
     
     except Exception as e:
         print(f"ERROR: {e}")

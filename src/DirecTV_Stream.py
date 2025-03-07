@@ -3,7 +3,7 @@ import pandas as pd
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, load_page, click_element, set_zipcode, smooth_scroll_to_bottom, write_to_excel
+from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, extract_channel_data, load_page, click_element, set_zipcode, smooth_scroll_to_bottom, write_to_excel
 
 # Variables for flexibility
 DIRECTV_STREAM_URL = "https://streamtv.directv.com/channels/modal/"
@@ -47,14 +47,7 @@ def scrape_directv_stream(mode="headless"):
 
         print(f"Extracted packages: {packages}")
 
-        # Locate the channels container div
-        channels_div = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.ID, CHANNELS_TABLE_BODY_ID))
-        )
-        print("channel div located")
-        # Extract all channel rows within channels_div
-        channels = channels_div.find_elements(By.CLASS_NAME, CHANNELS_TABLE_ROW_CLASS)
-        print("channels extracted")
+        channels = extract_channel_data(driver, (By.ID, CHANNELS_TABLE_BODY_ID), (By.CLASS_NAME, CHANNELS_TABLE_ROW_CLASS))
 
         # Extract Channel Name, Number, and Availability in Plans
         all_channels = []

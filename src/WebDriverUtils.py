@@ -138,22 +138,26 @@ def smooth_scroll_to_bottom(driver, scroll_step=1000, wait_time=0.25):
 
     print("Finished scrolling to the bottom.")
 
-def extract_channel_data(driver, container_locator, channel_locator, img_attr="title"):
+def extract_channel_data(driver, container_locator, channel_locator):
     """Extracts channel names from a given container."""
     try:
+        # Locate the channels container div
         container = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located(container_locator)
         )
-        channels = container.find_elements(By.CLASS_NAME, channel_locator)
-        return [ch.get_attribute(img_attr).strip() for ch in channels if ch.get_attribute(img_attr)]
+        print("channel container div located")
+        # Extract all channel rows within channels_div
+        channels = container.find_elements(channel_locator[0], channel_locator[1])
+        print("channels extracted")
+        return channels
     except Exception as e:
         print(f"Error extracting channels: {e}")
         return []
     
-def write_to_excel(df, output_file, sheet_name="Channels"):
+def write_to_excel(df, output_file, sheet_name="Channels", index=False):
     """Writes a DataFrame to an Excel file with formatting."""
     with pd.ExcelWriter(output_file, engine="xlsxwriter") as writer:
-        df.to_excel(writer, sheet_name=sheet_name, index=False)
+        df.to_excel(writer, sheet_name=sheet_name, index = index)
         worksheet = writer.sheets[sheet_name]
         worksheet.freeze_panes(1, 0)
         worksheet.autofilter(0, 0, len(df), len(df.columns) - 1)

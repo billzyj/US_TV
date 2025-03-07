@@ -3,7 +3,7 @@ import pandas as pd
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, load_page, click_element, set_zipcode, smooth_scroll_to_bottom, write_to_excel
+from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, load_page, click_element, set_zipcode, smooth_scroll_to_bottom, write_to_excel, extract_channel_data
 
 # Variables for flexibility
 DIRECTV_URL = "https://www.directv.com/channel-lineup/"
@@ -52,15 +52,8 @@ def scrape_directv(mode="headless"):
         if packages[0] == "CHANNELS":
             packages.pop(0)
 
-        # Locate the channels container div
-        channels_div = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.ID, CHANNELS_DIV_ID))
-        )
-        print("channel div located")
-        # Extract all channel rows within channels_div
-        channels = channels_div.find_elements(By.ID, TABLE_ROW_ID)
-        print("channels extracted")
-
+        channels = extract_channel_data(driver, (By.ID, CHANNELS_DIV_ID), (By.ID, TABLE_ROW_ID))
+        
         # Extract Channel Name, Number, and Availability in Plans
         all_channels = []
         print(len(channels))

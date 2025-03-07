@@ -4,7 +4,7 @@ import pandas as pd
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, load_page, click_element, set_zipcode, write_to_excel
+from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, extract_channel_data, load_page, click_element, set_zipcode, write_to_excel
 
 # Variables for flexibility
 SLING_URL = "https://www.sling.com/channels"
@@ -33,18 +33,15 @@ def scrape_sling_tv(mode="headless"):
         all_channels = {}
 
         for plan_name, plan_div in PLAN_CONTAINERS.items():
-            # Find the sibling directly in a single XPath query
-            channel_div = driver.find_element(By.XPATH, f"//div[contains(text(), '{plan_div}')]/following-sibling::*")
-            print(f"Processing plan: {plan_name}...")
-            try:
-                channel_elements = channel_div.find_elements(By.TAG_NAME, "img")
+            channels = extract_channel_data(driver, (By.XPATH, f"//div[contains(text(), '{plan_div}')]/following-sibling::*"), (By.TAG_NAME, "img"))
 
+            try:
                 # Extract all channel names from `img alt` attributes
-                channels = [img.get_attribute("alt") for img in channel_elements]
-                print(f"Extracted {len(channels)} channels for {plan_name}.")
+                channel_names = [img.get_attribute("alt") for img in channels]
+                print(f"Extracted {len(channel_names)} channels for {plan_name}.")
 
                 # Store channel presence in dictionary
-                for channel in channels:
+                for channel in channel_names:
                     if channel not in all_channels:
                         all_channels[channel] = {p_name: "" for p_name in PLAN_CONTAINERS.keys()}
 
