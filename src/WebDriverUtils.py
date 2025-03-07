@@ -8,7 +8,6 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 
@@ -29,6 +28,14 @@ def run_webdriver(mode="headless"):
         chrome_options.add_argument("--headless=new")  # Improved headless mode
         chrome_options.add_argument("--disable-gpu")  # Needed for headless stability
         chrome_options.add_argument("--window-size=1920,1080")  # Ensure consistent UI loading
+        chrome_options.add_argument("--disable-software-rasterizer")  # Avoids software rendering issues
+        chrome_options.add_argument("--disable-dev-shm-usage")  # Helps with shared memory issues
+        chrome_options.add_argument("--disable-accelerated-2d-canvas")  
+        chrome_options.add_argument("--disable-extensions")  
+        chrome_options.add_argument("--disable-logging")  
+        chrome_options.add_argument("--use-gl=disabled")  # Fully disable OpenGL/WebGL
+        chrome_options.add_argument("--disable-gpu-compositing")  # Ensures no GPU rendering
+        chrome_options.add_argument("--use-gl=swiftshader")  # Ensure software rendering
 
     # Common options
     chrome_options.add_argument("--no-sandbox")
@@ -57,7 +64,6 @@ def handle_popup(driver, close_locator):
     try:
         click_element(driver, close_locator)
         print("Closed promotion pop-up.")
-        time.sleep(1)
     except:
         print("No pop-up found, proceeding.")
     return driver
@@ -73,7 +79,7 @@ def click_element(driver, element_locator, element_container = None):
             )
         """Ensure the button is clickable by scrolling into view and clicking via JavaScript."""
         driver.execute_script("arguments[0].scrollIntoView();", element)  # Scroll to button
-        time.sleep(1)  # Give time for scrolling animation
+        time.sleep(0.5)  # Give time for scrolling animation
         driver.execute_script("arguments[0].click();", element)  # Click using JS
     except Exception as e:
         print(f"Error: {e}")
@@ -84,32 +90,45 @@ def set_zipcode(driver, zipcode, input_locator, submit_locator=None):
         print("Setting ZIP code...")
 
         # Wait for the ZIP input field to appear
-        zip_input = WebDriverWait(driver, 10).until(
+        zip_input = WebDriverWait(driver, 15).until(
             EC.presence_of_element_located(input_locator)
         )
 
         print("Located ZIP input field")
 
-        # Select all and delete existing text (to avoid stale values)
-        zip_input.send_keys(Keys.CONTROL + "a")  # Select all
-        zip_input.send_keys(Keys.BACKSPACE)  # Clear input
+        # Ensure the field is interactable, use JS if necessary
+        driver.execute_script("arguments[0].scrollIntoView();", zip_input)
+        driver.execute_script("arguments[0].focus();", zip_input)
 
-        # Simulate typing character by character
-        for char in zipcode:
-            zip_input.send_keys(char)
-            time.sleep(0.1)  # Simulates real typing speed
-        print("ZIP code typed successfully.")
+        # If normal input fails, force input with JavaScript
+        if not zip_input.is_enabled():
+            print("ZIP input not interactable, using JavaScript...")
+            driver.execute_script(f"arguments[0].value = '{zipcode}';", zip_input)
+        else:
+            # Clear and type ZIP normally
+            zip_input.send_keys(Keys.CONTROL + "a")  # Select all
+            zip_input.send_keys(Keys.BACKSPACE)  # Clear input
+            for char in zipcode:
+                zip_input.send_keys(char)
+                time.sleep(0.1)  # Simulate real typing
+            print("ZIP code typed successfully.")
 
+         # Handle submit button if available
         if submit_locator:
-            submit_button = WebDriverWait(driver, 5).until(
-                EC.element_to_be_clickable(submit_locator)
-            )
-            click_element(driver, submit_button)
+            try:
+                submit_button = WebDriverWait(driver, 5).until(
+                    EC.element_to_be_clickable(submit_locator)
+                )
+                click_element(driver, submit_button)
+            except:
+                print("Submit button not found or not needed.")
 
         print(f"ZIP code {zipcode} set successfully.")
+        return zip_input  # Ensure it returns the correct value
+    
     except Exception as e:
         print(f"Error setting ZIP code: {e}")
-    return zip_input
+        return None
 
 def smooth_scroll_to_bottom(driver, scroll_step=1000, wait_time=0.25):
     """

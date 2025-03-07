@@ -1,5 +1,4 @@
 import os
-import time
 import pandas as pd
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -25,19 +24,15 @@ OUTPUT_FILE = os.path.join(OUTPUT_DIR, "FuboTVChannelList.xlsx")
 def scrape_fubo_tv(mode="headless"):
     """Scrapes live channel data from FuboTV."""
     driver = load_page(mode, "FuboTV", FUBO_URL)
-
+    all_channels = {}
     try:        
-        all_channels = {}
-
         for plan, plan_id in PLAN_CONTAINERS.items():
             print(f"Processing {plan} plan...")
 
             # Reload the DOM to prevent stale element reference
             driver.refresh()
-            time.sleep(1)  # Give time for elements to reload
 
             set_zipcode(driver, ZIPCODE, (By.ID, ZIP_INPUT_ID))
-            time.sleep(1)
 
             # Re-locate plan container to prevent stale element reference
             plan_container = WebDriverWait(driver, 10).until(
@@ -47,16 +42,15 @@ def scrape_fubo_tv(mode="headless"):
             # Re-locate the "Learn More" button before clicking
             click_element(driver, (By.CLASS_NAME, LEARN_MORE_BUTTON_CLASS), plan_container)
             #click_element(driver, (By.XPATH, f"//button[@aria-label='Learn more']"), plan_container)
-            time.sleep(1)
             print("Learn more button clicked")
 
             # Re-locate the "Show More" button before clicking
             click_element(driver, (By.CLASS_NAME, SHOW_MORE_BUTTON_CLASS))
-            time.sleep(1)
             print("Show more button clicked")
 
             channels = extract_channel_data(driver, (By.CLASS_NAME, CHANNELS_DIV_CLASS), (By.CLASS_NAME, CHANNEL_CLASS))
-
+            print(f"Extracted {len(channels)} channels for {plan}.")
+            
             # Store channel presence in dictionary
             for channel in channels:
                 try:
@@ -90,3 +84,4 @@ def scrape_fubo_tv(mode="headless"):
 
     finally:
         driver.quit()
+        return all_channels, PLAN_CONTAINERS.keys()

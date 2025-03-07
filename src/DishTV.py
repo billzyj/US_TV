@@ -9,8 +9,8 @@ from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, extract_channel_data, load_p
 
 # Variables for flexibility
 DISH_URL = "https://www.dish.com/"
-PACKAGES_UL_ID = "navList_TV Packages"
-PACKAGE_LI_ID = "navLink_shop"
+PLANS_UL_ID = "navList_TV Packages"
+PLAN_LI_ID = "navLink_shop"
 ZIP_INPUT_ARIA_LABEL = "Results for"
 ZIP_INPUT_CLASS = "cmp-textinput__input"
 CHANNELS_DIV_CLASS = "cmp-singlepackageclu__channellist"
@@ -20,54 +20,53 @@ OUTPUT_FILE = os.path.join(OUTPUT_DIR, "DishTVChannelList.xlsx")
 def scrape_dishtv(mode="headless"):
     """Scrapes live channel data from DishTV."""
     driver = load_page(mode, "DishTV", DISH_URL)
-
+    channels, plans = {}, {}
     try:
-        all_channels = {}  # Dictionary to store channels across packages
+        all_channels = {}  # Dictionary to store channels across plans
 
-        # Get packages name and url in the list
-        print("Locating packages info...")
+        # Get plans name and url in the list
+        print("Locating plans info...")
         WebDriverWait(driver, 20).until(
-            EC.presence_of_element_located((By.ID, PACKAGES_UL_ID))
+            EC.presence_of_element_located((By.ID, PLANS_UL_ID))
         )
 
-        # Extract package names & URLs
-        package_elements = driver.find_elements(By.XPATH, "//ul[contains(@id, 'navList_TV Packages')]//a")
-        packages = {}
-        for pkg in package_elements:
-            package_name = pkg.get_attribute("aria-label")  # First try aria-label (reliable)
-            if not package_name:
-                package_name = pkg.text.strip()  # Fallback to .text if aria-label is missing
+        # Extract plan names & URLs
+        plan_elements = driver.find_elements(By.XPATH, f"//ul[contains(@id, '{PLANS_UL_ID}')]//a")
+        plans = {}
+        for pkg in plan_elements:
+            plan_name = pkg.get_attribute("aria-label")  # First try aria-label (reliable)
+            if not plan_name:
+                plan_name = pkg.text.strip()  # Fallback to .text if aria-label is missing
             
-            package_url = pkg.get_attribute("href")
+            plan_url = pkg.get_attribute("href")
             
-            if package_name:  # Ensure we don't store empty keys
-                packages[package_name] = package_url
+            if plan_name:  # Ensure we don't store empty keys
+                plans[plan_name] = plan_url
+        print(f"Found {len(plans)} plans:", plans)
 
-
-        print(f"Found {len(packages)} packages:", packages)
-
-        # Iterate over each package to scrape channels
-        for package_name, package_url in packages.items():
-            print(f"Processing package: {package_name}...")
-            driver.get(package_url)  # Navigate to package page
+        # Iterate over each plan to scrape channels
+        for plan_name, plan_url in plans.items():
+            print(f"Processing plan: {plan_name}...")
+            driver.get(plan_url)  # Navigate to plan page
 
             # Set ZIP code and mimic "Enter" key press
             zip_input_box = set_zipcode(driver, ZIPCODE, (By.XPATH, f"//input[@aria-label='{ZIP_INPUT_ARIA_LABEL}']"))
             zip_input_box.send_keys(Keys.ENTER)  # Simulate pressing Enter
-            time.sleep(3)  # Ensure the page fully loads
+            time.sleep(1)  # Ensure the page fully loads
 
             channels = extract_channel_data(driver, (By.CLASS_NAME, CHANNELS_DIV_CLASS), (By.CLASS_NAME, CHANNEL_CLASS))
-            
+            print(f"Extracted {len(channels)} channels for {plan_name}.")
+
             for channel in channels:
                 try:
                     channel_name = channel.find_element(By.TAG_NAME, "p").text.strip()
                     # Extract only the name after "-"
                     channel_name = channel_name.split(" - ")[-1] if " - " in channel_name else channel_name
 
-                    # Store channel in dictionary (mark available in this package)
+                    # Store channel in dictionary (mark available in this plan)
                     if channel_name not in all_channels:
-                        all_channels[channel_name] = {pkg: "" for pkg in packages.keys()}  # Initialize row
-                    all_channels[channel_name][package_name] = "✔"  # Mark availability
+                        all_channels[channel_name] = {pkg: "" for pkg in plans.keys()}  # Initialize row
+                    all_channels[channel_name][plan_name] = "✔"  # Mark availability
                 except Exception as e:
                     print(f"Error extracting channel name: {e}")
 
@@ -83,3 +82,4 @@ def scrape_dishtv(mode="headless"):
 
     finally:
         driver.quit()
+        return all_channels, plans.keys()

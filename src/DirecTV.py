@@ -16,7 +16,7 @@ CHANNELS_TABLE_ROW_ID = "tableBodyRow"
 TOGGLE_BUTTON_CLASS = "mui-style-1ii9cd9"
 
 CHANNELS_TABLE_HEADER_ID = "tableHeader"
-PACKAGE_NAME_CLASS = "MuiTypography-root"
+PLAN_NAME_CLASS = "MuiTypography-root"
 CHANNELS_DIV_ID = "nestedTableBody"
 TABLE_ROW_ID = "nestedTableRow"
 OUTPUT_FILE = os.path.join(OUTPUT_DIR, "DirecTVChannelList.xlsx")
@@ -24,7 +24,7 @@ OUTPUT_FILE = os.path.join(OUTPUT_DIR, "DirecTVChannelList.xlsx")
 def scrape_directv(mode="headless"):
     """Scrapes live channel data from DirecTV."""
     driver = load_page(mode, "DirecTV", DIRECTV_URL)
-
+    all_channels, plans = [], []
     try:
         # Locate and click the zipcode link
         click_element(driver, (By.CLASS_NAME, SET_ZIP_LINK_CLASS))
@@ -40,22 +40,21 @@ def scrape_directv(mode="headless"):
             EC.presence_of_element_located((By.ID, CHANNELS_TABLE_HEADER_ID))
         )
         print(f"Header located")
-        # Extract package plans from table header dynamically
-        packages = []
-        package_headers = channels_header.find_elements(By.TAG_NAME, "th")
-        for header in package_headers:
-            package_name_elem = header.find_elements(By.CLASS_NAME, PACKAGE_NAME_CLASS)
-            if package_name_elem:
-                packages.append(package_name_elem[0].text.strip())
+        # Extract plan plans from table header dynamically
 
-        print(f"Extracted packages: {packages}")
-        if packages[0] == "CHANNELS":
-            packages.pop(0)
+        plan_headers = channels_header.find_elements(By.TAG_NAME, "th")
+        for header in plan_headers:
+            plan_name_elem = header.find_elements(By.CLASS_NAME, PLAN_NAME_CLASS)
+            if plan_name_elem:
+                plans.append(plan_name_elem[0].text.strip())
+        if plans[0] == "CHANNELS":
+            plans.pop(0)
+        print(f"Extracted plans: {plans}")
 
         channels = extract_channel_data(driver, (By.ID, CHANNELS_DIV_ID), (By.ID, TABLE_ROW_ID))
+        print(f"Extracted {len(channels)} channels for DirecTV.")
         
         # Extract Channel Name, Number, and Availability in Plans
-        all_channels = []
         print(len(channels))
         for channel in channels:
             cells = channel.find_elements(By.TAG_NAME, "td")
@@ -68,17 +67,17 @@ def scrape_directv(mode="headless"):
             channel_name = channel_info[0].text.strip()
             channel_number = channel_info[1].text.strip()
 
-            # Extract package availability (second to fifth td)
-            package_status = []
-            for i in range(1, len(packages) + 1):
+            # Extract plan availability (second to fifth td)
+            plan_status = []
+            for i in range(1, len(plans) + 1):
                 included = "✔️" if cells[i].find_elements(By.TAG_NAME, "span") else ""
-                package_status.append(included)
+                plan_status.append(included)
 
             # Store data
-            all_channels.append([channel_name, channel_number] + package_status)
+            all_channels.append([channel_name, channel_number] + plan_status)
 
         # Convert to DataFrame
-        df_directv = pd.DataFrame(all_channels, columns=["Channel Name", "Channel Number"] + packages)
+        df_directv = pd.DataFrame(all_channels, columns=["Channel Name", "Channel Number"] + plans)
 
         # Sort DataFrame by Channel Name
         df_directv = df_directv.sort_values(by=["Channel Name"])
@@ -91,3 +90,4 @@ def scrape_directv(mode="headless"):
 
     finally:
         driver.quit()
+        return all_channels, plans

@@ -1,5 +1,4 @@
 import os
-import time
 import pandas as pd
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -21,18 +20,14 @@ def scrape_hulu_tv(mode="headless"):
 
     try:
         # Locate and click the "View Channels" button
-        print("Locating View Channels button...")
-        channel_button = WebDriverWait(driver, 20).until(
-            EC.element_to_be_clickable((By.CLASS_NAME, VIEW_CHANNELS_BUTTON_CLASS))
-        )
         click_element(driver, (By.CLASS_NAME, VIEW_CHANNELS_BUTTON_CLASS))
         print("Opened Channel Plans window...")
-        time.sleep(1)
         
         # Set to specified zipcode
         set_zipcode(driver, ZIPCODE, (By.ID, ZIP_INPUT_ID), (By.CLASS_NAME, ZIP_SUBMIT_CLASS))
 
         channels = extract_channel_data(driver, (By.CLASS_NAME, CHANNELS_DIV_CLASS), (By.CLASS_NAME, SPAN_CLASS))
+        print(f"Extracted {len(channels)} channels for HuluTV.")
 
         # Extract the text from each span element
         channel_names = [span.get_attribute("innerText").strip() for span in channels]
@@ -42,7 +37,7 @@ def scrape_hulu_tv(mode="headless"):
 
         # Save to excel with formatting
         write_to_excel(df_hulu_tv, OUTPUT_FILE, sheet_name="HuluTV Channels")
-
+        return channel_names
     except Exception as e:
         print(f"Error: {e}")
 
