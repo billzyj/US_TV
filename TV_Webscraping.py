@@ -7,7 +7,7 @@ from src.HuluTV import scrape_hulu_tv
 from src.SlingTV import scrape_sling_tv
 from src.YoutubeTV import scrape_youtube_tv
 from src.DishTV import scrape_dishtv
-from src.WebDriverUtils import OUTPUT_DIR, write_to_excel
+from src.WebDriverUtils import OUTPUT_DIR, LOGGER, write_to_excel
 
 def generate_summary_excel(directv_channels, directvstream_channels, dish_channels, fubo_channels,
                            hulu_channels, sling_channels, youtube_channels, 
@@ -30,7 +30,7 @@ def generate_summary_excel(directv_channels, directvstream_channels, dish_channe
     :param sling_plans: List of SlingTV plan names
     """
 
-    print("Generating consolidated channel list...")
+    LOGGER.info("Generating consolidated channel list...")
     
     # Normalize channel names to lowercase and strip spaces
     def normalize_channel_name(name):
@@ -86,8 +86,8 @@ def generate_summary_excel(directv_channels, directvstream_channels, dish_channe
     merge_provider_data(sling_channels, "SlingTV", sling_plans)
 
     # Mark Hulu and YouTube TV as single-plan providers
-    summary_df["HuluTV"] = summary_df["Channel"].apply(lambda x: "✔" if normalize_channel_name(x) in map(normalize_channel_name, hulu_channels) else "")
-    summary_df["YouTubeTV"] = summary_df["Channel"].apply(lambda x: "✔" if normalize_channel_name(x) in map(normalize_channel_name, youtube_channels) else "")
+    summary_df["HuluTV"] = summary_df["Channel"].apply(lambda x: "✔️" if normalize_channel_name(x) in map(normalize_channel_name, hulu_channels) else "")
+    summary_df["YouTubeTV"] = summary_df["Channel"].apply(lambda x: "✔️" if normalize_channel_name(x) in map(normalize_channel_name, youtube_channels) else "")
 
     # Fill missing values with empty strings
     summary_df.fillna("", inplace=True)

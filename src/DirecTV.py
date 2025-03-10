@@ -3,7 +3,7 @@ import pandas as pd
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, load_page, click_element, set_zipcode, smooth_scroll_to_bottom, write_to_excel, extract_channel_data
+from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, LOGGER, load_page, click_element, set_zipcode, extract_channel_data, smooth_scroll_to_bottom, write_to_excel
 
 # Variables for flexibility
 DIRECTV_URL = "https://www.directv.com/channel-lineup/"
@@ -28,7 +28,7 @@ def scrape_directv(mode="headless"):
     try:
         # Locate and click the zipcode link
         click_element(driver, (By.CLASS_NAME, SET_ZIP_LINK_CLASS))
-        print("Opened set zipcode window...")
+        LOGGER.info("Opened set zipcode window...")
         
         # Set zipcode and submit, page will be refreshed
         set_zipcode(driver, ZIPCODE, (By.ID, ZIP_INPUT_ID), (By.XPATH, f"//a[@aria-label='{SET_ZIP_LINK_BUTTON_ARIA_LABEL}']"))
@@ -39,7 +39,7 @@ def scrape_directv(mode="headless"):
         channels_header = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.ID, CHANNELS_TABLE_HEADER_ID))
         )
-        print(f"Header located")
+        LOGGER.info(f"Header located")
         # Extract plan plans from table header dynamically
 
         plan_headers = channels_header.find_elements(By.TAG_NAME, "th")
@@ -49,19 +49,18 @@ def scrape_directv(mode="headless"):
                 plans.append(plan_name_elem[0].text.strip())
         if plans[0] == "CHANNELS":
             plans.pop(0)
-        print(f"Extracted plans: {plans}")
+        LOGGER.info(f"Extracted plans: {plans}")
 
         channels = extract_channel_data(driver, (By.ID, CHANNELS_DIV_ID), (By.ID, TABLE_ROW_ID))
-        print(f"Extracted {len(channels)} channels for DirecTV.")
+        LOGGER.info(f"Extracted {len(channels)} channels for DirecTV.")
         
         # Extract Channel Name, Number, and Availability in Plans
-        print(len(channels))
+        LOGGER.info(len(channels))
         for channel in channels:
             cells = channel.find_elements(By.TAG_NAME, "td")
 
             # Extract channel name and number (inside first td)
             channel_info = cells[0].find_elements(By.TAG_NAME, "p")
-            #print(channel_info[0].text, " ", channel_info[1].text)
             if len(channel_info) < 2:
                 continue  # Skip if information is missing
             channel_name = channel_info[0].text.strip()
@@ -86,7 +85,7 @@ def scrape_directv(mode="headless"):
         write_to_excel(df_directv, OUTPUT_FILE, sheet_name="DirecTV Channels")
 
     except Exception as e:
-        print(f"Error: {e}")
+        LOGGER.error(f"Error: {e}")
 
     finally:
         driver.quit()

@@ -4,7 +4,7 @@ import pandas as pd
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, extract_channel_data, load_page, click_element, write_to_excel
+from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, LOGGER, load_page, click_element, extract_channel_data, write_to_excel
 
 # Variables for flexibility
 YOUTUBE_TV_URL = f"https://tv.youtube.com/welcome/?utm_servlet=prod&rd_rsn=asi&zipcode={ZIPCODE}"
@@ -20,10 +20,10 @@ def scrape_youtube_tv(mode="headless"):
     try:
         # Locate and click the submit button to pull channel list
         click_element(driver, (By.CLASS_NAME, SUBMIT_BUTTON_CLASS))
-        print("Compare plans window opened successfully.")
+        LOGGER.info("Compare plans window opened successfully.")
 
         channels = extract_channel_data(driver, (By.CLASS_NAME, CHANNELS_DIV_CLASS), (By.TAG_NAME, CHANNEL_TAG))
-        print(f"Extracted {len(channels)} channels for youtube.")
+        LOGGER.info(f"Extracted {len(channels)} channels for youtube.")
 
         for channel in channels:
             match = re.findall(r'Button - (.*?) \(all-channels\)', channel.get_attribute("lb-options")) #return list of lists
@@ -37,7 +37,7 @@ def scrape_youtube_tv(mode="headless"):
         write_to_excel(df_youtube_tv, OUTPUT_FILE, sheet_name="YoutubeTV Channels")
         return channel_names
     except Exception as e:
-        print(f"Error: {e}")
+        LOGGER.error(f"Error: {e}")
 
     finally:
         driver.quit()

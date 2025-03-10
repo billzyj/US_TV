@@ -3,7 +3,7 @@ import pandas as pd
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, extract_channel_data, load_page, click_element, set_zipcode, write_to_excel
+from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, LOGGER, load_page, click_element, set_zipcode, extract_channel_data, write_to_excel
 
 # Variables for flexibility
 FUBO_URL = "https://fubo.tv/welcome"
@@ -27,7 +27,7 @@ def scrape_fubo_tv(mode="headless"):
     all_channels = {}
     try:        
         for plan, plan_id in PLAN_CONTAINERS.items():
-            print(f"Processing {plan} plan...")
+            LOGGER.info(f"Processing {plan} plan...")
 
             # Reload the DOM to prevent stale element reference
             driver.refresh()
@@ -42,15 +42,15 @@ def scrape_fubo_tv(mode="headless"):
             # Re-locate the "Learn More" button before clicking
             click_element(driver, (By.CLASS_NAME, LEARN_MORE_BUTTON_CLASS), plan_container)
             #click_element(driver, (By.XPATH, f"//button[@aria-label='Learn more']"), plan_container)
-            print("Learn more button clicked")
+            LOGGER.info("Learn more button clicked")
 
             # Re-locate the "Show More" button before clicking
             click_element(driver, (By.CLASS_NAME, SHOW_MORE_BUTTON_CLASS))
-            print("Show more button clicked")
+            LOGGER.info("Show more button clicked")
 
             channels = extract_channel_data(driver, (By.CLASS_NAME, CHANNELS_DIV_CLASS), (By.CLASS_NAME, CHANNEL_CLASS))
-            print(f"Extracted {len(channels)} channels for {plan}.")
-            
+            LOGGER.info(f"Extracted {len(channels)} channels for {plan}.")
+
             # Store channel presence in dictionary
             for channel in channels:
                 try:
@@ -61,16 +61,16 @@ def scrape_fubo_tv(mode="headless"):
                     # Store channel in dictionary (mark available in this package)
                     if channel_name not in all_channels:
                         all_channels[channel_name] = {pkg: "" for pkg in PLAN_CONTAINERS.keys()}  # Initialize row
-                    all_channels[channel_name][plan] = "✔"  # Mark availability
+                    all_channels[channel_name][plan] = "✔️"  # Mark availability
                 except Exception as e:
-                    print(f"Error extracting channel name: {e}")
+                    LOGGER.info(f"Error extracting channel name: {e}")
 
             # Re-locate and close the pop-up before moving to the next plan
             close_button = WebDriverWait(driver, 10).until(
                 EC.element_to_be_clickable((By.XPATH, f"//button[@aria-label='{CLOSE_POPUP_BUTTON_ARIA}']"))
             )
             click_element(driver, close_button)
-            print("Channel list closed")
+            LOGGER.info("Channel list closed")
 
         # Convert dictionary to DataFrame
         df_fubo_tv = pd.DataFrame.from_dict(all_channels, orient="index").reset_index()
@@ -80,7 +80,7 @@ def scrape_fubo_tv(mode="headless"):
         write_to_excel(df_fubo_tv, OUTPUT_FILE, sheet_name="FuboTV Channels")
     
     except Exception as e:
-        print(f"ERROR: {e}")
+        LOGGER.error(f"ERROR: {e}")
 
     finally:
         driver.quit()

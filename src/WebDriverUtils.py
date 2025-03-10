@@ -1,3 +1,4 @@
+import logging
 import os
 import time
 import random
@@ -15,6 +16,27 @@ from selenium.webdriver.common.action_chains import ActionChains
 ZIPCODE = "79423"
 OUTPUT_DIR = "./output"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+LOG_FILE = os.path.join(OUTPUT_DIR, "tv_scraper.log")
+def setup_logger():
+    """Setup logging for the project."""
+    logging.basicConfig(
+        filename=LOG_FILE,  # Log output to a file
+        filemode="a",  # Append logs to the file
+        format="%(asctime)s - %(levelname)s - %(message)s",  # Log format
+        level=logging.DEBUG  # Capture all logs (DEBUG and above)
+    )
+    logger = logging.getLogger(__name__)
+
+    # Also log to console
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.INFO)  # Only show INFO+ logs in console
+    formatter = logging.Formatter("%(levelname)s - %(message)s")
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
+
+    return logger
+LOGGER = setup_logger() # Initialize logger
 
 def run_webdriver(mode="headless"):
     """Initialize and return a Selenium WebDriver instance.
@@ -44,28 +66,28 @@ def run_webdriver(mode="headless"):
     chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
     chrome_options.add_experimental_option("useAutomationExtension", False)
 
-    print(f"Starting WebDriver in {'Headless' if 'headless' in mode else 'GUI'} mode...")
+    LOGGER.info(f"Starting WebDriver in {'Headless' if 'headless' in mode else 'GUI'} mode...")
 
     service = Service(ChromeDriverManager().install())
     return webdriver.Chrome(service=service, options=chrome_options)
 
 def load_page(mode, page_name, page_url, check_popup = False, close_locator = None, sleep_time = 0):
-    print(f"Web scraping {page_name}...")
+    LOGGER.info(f"Web scraping {page_name}...")
     driver = run_webdriver(mode)
     driver.get(page_url)
-    print("Waiting for page to load...")
+    LOGGER.info("Waiting for page to load...")
     time.sleep(sleep_time)
     if check_popup :
         driver = handle_popup(driver, close_locator)
     return driver
 
 def handle_popup(driver, close_locator):
-    print("Checking for promotion pop-up...")
+    LOGGER.info("Checking for promotion pop-up...")
     try:
         click_element(driver, close_locator)
-        print("Closed promotion pop-up.")
+        LOGGER.info("Closed promotion pop-up.")
     except:
-        print("No pop-up found, proceeding.")
+        LOGGER.exception("No pop-up found, proceeding.")
     return driver
 
 def click_element(driver, element_locator, element_container = None):
@@ -82,19 +104,19 @@ def click_element(driver, element_locator, element_container = None):
         time.sleep(0.5)  # Give time for scrolling animation
         driver.execute_script("arguments[0].click();", element)  # Click using JS
     except Exception as e:
-        print(f"Error: {e}")
+        LOGGER.error(f"Error: {e}")
 
 def set_zipcode(driver, zipcode, input_locator, submit_locator=None):
     """Sets the ZIP code and submits if required."""
     try:
-        print("Setting ZIP code...")
+        LOGGER.info("Setting ZIP code...")
 
         # Wait for the ZIP input field to appear
         zip_input = WebDriverWait(driver, 15).until(
             EC.presence_of_element_located(input_locator)
         )
 
-        print("Located ZIP input field")
+        LOGGER.info("Located ZIP input field")
 
         # Ensure the field is interactable, use JS if necessary
         driver.execute_script("arguments[0].scrollIntoView();", zip_input)
@@ -102,7 +124,7 @@ def set_zipcode(driver, zipcode, input_locator, submit_locator=None):
 
         # If normal input fails, force input with JavaScript
         if not zip_input.is_enabled():
-            print("ZIP input not interactable, using JavaScript...")
+            LOGGER.info("ZIP input not interactable, using JavaScript...")
             driver.execute_script(f"arguments[0].value = '{zipcode}';", zip_input)
         else:
             # Clear and type ZIP normally
@@ -111,7 +133,7 @@ def set_zipcode(driver, zipcode, input_locator, submit_locator=None):
             for char in zipcode:
                 zip_input.send_keys(char)
                 time.sleep(0.1)  # Simulate real typing
-            print("ZIP code typed successfully.")
+            LOGGER.info("ZIP code typed successfully.")
 
          # Handle submit button if available
         if submit_locator:
@@ -121,13 +143,13 @@ def set_zipcode(driver, zipcode, input_locator, submit_locator=None):
                 )
                 click_element(driver, submit_button)
             except:
-                print("Submit button not found or not needed.")
+                LOGGER.info("Submit button not found or not needed.")
 
-        print(f"ZIP code {zipcode} set successfully.")
+        LOGGER.info(f"ZIP code {zipcode} set successfully.")
         return zip_input  # Ensure it returns the correct value
     
     except Exception as e:
-        print(f"Error setting ZIP code: {e}")
+        LOGGER.error(f"Error setting ZIP code: {e}")
         return None
 
 def smooth_scroll_to_bottom(driver, scroll_step=1000, wait_time=0.25):
@@ -140,7 +162,7 @@ def smooth_scroll_to_bottom(driver, scroll_step=1000, wait_time=0.25):
         wait_time: Time to wait after each scroll (default: 0.5s).
     """
     
-    print("Resetting scroll position to the top...")
+    LOGGER.info("Resetting scroll position to the top...")
     driver.execute_script("window.scrollTo(0, 0);")
     time.sleep(0.1)  # Allow the page to adjust
 
@@ -148,14 +170,14 @@ def smooth_scroll_to_bottom(driver, scroll_step=1000, wait_time=0.25):
     total_height = driver.execute_script("return document.body.scrollHeight")
     current_position = 0  # Track the current scroll position
 
-    print(f"Starting smooth scroll to bottom... (Total Height: {total_height}px)")
+    LOGGER.info(f"Starting smooth scroll to bottom... (Total Height: {total_height}px)")
 
     while current_position < 2 * total_height:
         current_position += scroll_step
         driver.execute_script(f"window.scrollTo(0, {current_position});")
         time.sleep(wait_time)  # Allow content to load smoothly
 
-    print("Finished scrolling to the bottom.")
+    LOGGER.info("Finished scrolling to the bottom.")
 
 def extract_channel_data(driver, container_locator, channel_locator):
     """Extracts channel names from a given container."""
@@ -164,13 +186,13 @@ def extract_channel_data(driver, container_locator, channel_locator):
         container = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located(container_locator)
         )
-        print("channel container div located")
+        LOGGER.info("channel container div located")
         # Extract all channel rows within channels_div
         channels = container.find_elements(channel_locator[0], channel_locator[1])
-        print("channels extracted")
+        LOGGER.info("channels extracted")
         return channels
     except Exception as e:
-        print(f"Error extracting channels: {e}")
+        LOGGER.error(f"Error extracting channels: {e}")
         return []
     
 def write_to_excel(df, output_file, sheet_name="Channels", index=False):
@@ -180,7 +202,7 @@ def write_to_excel(df, output_file, sheet_name="Channels", index=False):
         worksheet = writer.sheets[sheet_name]
         worksheet.freeze_panes(1, 0)
         worksheet.autofilter(0, 0, len(df), len(df.columns) - 1)
-    print(f"Data saved to {output_file}")
+    LOGGER.info(f"Data saved to {output_file}")
 
 
 def move_mouse_randomly(driver):

@@ -1,7 +1,6 @@
 # US TV Channel Web Scraping Project
 
 ## TODO
-- Use Python logging
 - Merge similar channel names
 - Test headless mode
 - Improve error handling for provider site changes

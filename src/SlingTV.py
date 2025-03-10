@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 from selenium.webdriver.common.by import By
-from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, extract_channel_data, load_page, click_element, set_zipcode, write_to_excel
+from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, LOGGER, load_page, click_element, set_zipcode, extract_channel_data, write_to_excel
 
 # Variables for flexibility
 SLING_URL = "https://www.sling.com/channels"
@@ -19,9 +19,9 @@ def scrape_sling_tv(mode="headless"):
     all_channels = {}
     try:
         # Locate and click the "Compare Plans" button
-        print("Locating Compare Plans button...")
+        LOGGER.info("Locating Compare Plans button...")
         click_element(driver, (By.XPATH, "//button[.//p[contains(text(), 'Compare Plans')]]"))
-        print("Opened Compare Plans window...")
+        LOGGER.info("Opened Compare Plans window...")
         
         set_zipcode(driver, ZIPCODE, (By.XPATH, "//input[@data-reference-id='billing-form-zip-field']"))
 
@@ -32,17 +32,17 @@ def scrape_sling_tv(mode="headless"):
             try:
                 # Extract all channel names from `img alt` attributes
                 channel_names = [img.get_attribute("alt") for img in channels]
-                print(f"Extracted {len(channel_names)} channels for {plan_name}.")
+                LOGGER.info(f"Extracted {len(channel_names)} channels for {plan_name}.")
 
                 # Store channel presence in dictionary
                 for channel in channel_names:
                     if channel not in all_channels:
                         all_channels[channel] = {p_name: "" for p_name in PLAN_CONTAINERS.keys()}
 
-                    all_channels[channel][plan_name] = "✔"  # Mark availability
+                    all_channels[channel][plan_name] = "✔️"  # Mark availability
 
             except Exception as e:
-                print(f"Error extracting channels for {plan_name}: {e}")
+                LOGGER.info(f"Error extracting channels for {plan_name}: {e}")
 
         # Convert dictionary to DataFrame
         df_sling_tv = pd.DataFrame.from_dict(all_channels, orient="index").reset_index()
@@ -52,7 +52,7 @@ def scrape_sling_tv(mode="headless"):
         write_to_excel(df_sling_tv, OUTPUT_FILE, sheet_name="SlingTV Channels")
 
     except Exception as e:
-        print(f"Error: {e}")
+        LOGGER.error(f"Error: {e}")
 
     finally:
         driver.quit()

@@ -5,7 +5,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, extract_channel_data, load_page, set_zipcode, write_to_excel
+from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, LOGGER, load_page,  extract_channel_data, set_zipcode, write_to_excel
 
 # Variables for flexibility
 DISH_URL = "https://www.dish.com/"
@@ -25,7 +25,7 @@ def scrape_dishtv(mode="headless"):
         all_channels = {}  # Dictionary to store channels across plans
 
         # Get plans name and url in the list
-        print("Locating plans info...")
+        LOGGER.info("Locating plans info...")
         WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.ID, PLANS_UL_ID))
         )
@@ -42,11 +42,11 @@ def scrape_dishtv(mode="headless"):
             
             if plan_name:  # Ensure we don't store empty keys
                 plans[plan_name] = plan_url
-        print(f"Found {len(plans)} plans:", plans)
+        LOGGER.info(f"Found {len(plans)} plans:", plans)
 
         # Iterate over each plan to scrape channels
         for plan_name, plan_url in plans.items():
-            print(f"Processing plan: {plan_name}...")
+            LOGGER.info(f"Processing plan: {plan_name}...")
             driver.get(plan_url)  # Navigate to plan page
 
             # Set ZIP code and mimic "Enter" key press
@@ -55,7 +55,7 @@ def scrape_dishtv(mode="headless"):
             time.sleep(1)  # Ensure the page fully loads
 
             channels = extract_channel_data(driver, (By.CLASS_NAME, CHANNELS_DIV_CLASS), (By.CLASS_NAME, CHANNEL_CLASS))
-            print(f"Extracted {len(channels)} channels for {plan_name}.")
+            LOGGER.info(f"Extracted {len(channels)} channels for {plan_name}.")
 
             for channel in channels:
                 try:
@@ -66,9 +66,9 @@ def scrape_dishtv(mode="headless"):
                     # Store channel in dictionary (mark available in this plan)
                     if channel_name not in all_channels:
                         all_channels[channel_name] = {pkg: "" for pkg in plans.keys()}  # Initialize row
-                    all_channels[channel_name][plan_name] = "✔"  # Mark availability
+                    all_channels[channel_name][plan_name] = "✔️"  # Mark availability
                 except Exception as e:
-                    print(f"Error extracting channel name: {e}")
+                    LOGGER.info(f"Error extracting channel name: {e}")
 
         # Convert dictionary to DataFrame
         df_dishtv = pd.DataFrame.from_dict(all_channels, orient="index")
@@ -78,7 +78,7 @@ def scrape_dishtv(mode="headless"):
         write_to_excel(df_dishtv, OUTPUT_FILE, sheet_name="DishTV Channels", index=True)
 
     except Exception as e:
-        print(f"Error: {e}")
+        LOGGER.error(f"Error: {e}")
 
     finally:
         driver.quit()
