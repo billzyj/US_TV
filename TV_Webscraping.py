@@ -98,15 +98,15 @@ def generate_summary_excel(directv_channels, directvstream_channels, dish_channe
 
 if __name__ == "__main__":
     #  # Run scrapers and collect data
-    directv_channels, directv_plans = scrape_directv("")
-    directvstream_channels, directvstream_plans = scrape_directv_stream("")
-    dish_channels, dish_plans = scrape_dishtv()
-    fubo_channels, fubo_plans = scrape_fubo_tv("")
-    sling_channels, sling_plans = scrape_sling_tv()
-    hulu_channels = scrape_hulu_tv()
+    # directv_channels, directv_plans = scrape_directv("")
+    # directvstream_channels, directvstream_plans = scrape_directv_stream("")
+    # dish_channels, dish_plans = scrape_dishtv()
+    # fubo_channels, fubo_plans = scrape_fubo_tv("")
+    # sling_channels, sling_plans = scrape_sling_tv()
+    # hulu_channels = scrape_hulu_tv()
     youtube_channels = scrape_youtube_tv()
 
-    # Generate the summary Excel
-    generate_summary_excel(directv_channels, directvstream_channels, dish_channels, fubo_channels,
-                            hulu_channels, sling_channels, youtube_channels,
-                            directv_plans, directvstream_plans, dish_plans, fubo_plans, sling_plans)
+    # # Generate the summary Excel
+    # generate_summary_excel(directv_channels, directvstream_channels, dish_channels, fubo_channels,
+    #                         hulu_channels, sling_channels, youtube_channels,
+    #                         directv_plans, directvstream_plans, dish_plans, fubo_plans, sling_plans)

@@ -1,16 +1,14 @@
 import os
-import re
 import pandas as pd
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, LOGGER, load_page, click_element, extract_channel_data, write_to_excel
 
 # Variables for flexibility
 YOUTUBE_TV_URL = f"https://tv.youtube.com/welcome/?utm_servlet=prod&rd_rsn=asi&zipcode={ZIPCODE}"
 SUBMIT_BUTTON_CLASS = "tv-network-browser__input-area-submit"
 CHANNELS_DIV_CLASS = "tv-network-matrix__body"
-CHANNEL_TAG = "a"
+CHANNEL_TAG = "img"
+CHANNEL_NAME_CLASS = 'alt'
 OUTPUT_FILE = os.path.join(OUTPUT_DIR, "YoutubeTVChannelList.xlsx")
 
 def scrape_youtube_tv(mode="headless"):
@@ -26,9 +24,7 @@ def scrape_youtube_tv(mode="headless"):
         LOGGER.info(f"Extracted {len(channels)} channels for youtube.")
 
         for channel in channels:
-            match = re.findall(r'Button - (.*?) \(all-channels\)', channel.get_attribute("lb-options")) #return list of lists
-            if match:
-                channel_names.append(match[0]) # Extract only the first matched string
+            channel_names.append(channel.get_attribute(CHANNEL_NAME_CLASS)) # Extract only the first matched string
 
         # Convert data to dataframe
         df_youtube_tv = pd.DataFrame(channel_names, columns=["Channel Name"])

@@ -1,0 +1,13 @@
+pursuit	pursuit channel
+reelz	reelzchannel
+sec	sec network	sec network (local)
+shop lc	shoplc
+syfy	syfy channel
+teen nick	teennick
+telemundo	telemundo (kxtq-lubbock, tx)
+tennis	tennis channel
+thegrio	thegrio tv
+torque	torque by history
+usa	usa network
+univision (este)	univision este
+women's sports network	women’s sports network
