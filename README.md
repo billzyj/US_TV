@@ -1,7 +1,6 @@
 # US TV Channel Web Scraping Project
 
 ## TODO
-- Merge similar channel names
 - Test headless mode
 - Improve error handling for provider site changes
 - Optimize Selenium scraping speed
