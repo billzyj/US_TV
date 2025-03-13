@@ -7,9 +7,9 @@ from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, LOGGER, load_page, click_ele
 
 # Variables for flexibility
 DIRECTV_URL = "https://www.directv.com/channel-lineup/"
-SET_ZIP_LINK_CLASS = "mui-style-11zofoq"
+SET_ZIP_LINK_CLASS = "mui-style-1c87emg"
 ZIP_INPUT_ID = "zipcode-search"
-SET_ZIP_LINK_BUTTON_ARIA_LABEL = "Set ZIP Code"
+SET_ZIP_LINK_BUTTON_ARIA_LABEL = "Search ZIP Code"
 
 CHANNELS_TABLE_BODY_ID = "tableBody"
 CHANNELS_TABLE_ROW_ID = "tableBodyRow"
@@ -23,7 +23,7 @@ OUTPUT_FILE = os.path.join(OUTPUT_DIR, "DirecTVChannelList.xlsx")
 
 def scrape_directv(mode="headless"):
     """Scrapes live channel data from DirecTV."""
-    driver = load_page(mode, "DirecTV", DIRECTV_URL)
+    driver = load_page(mode, "DirecTV", DIRECTV_URL, sleep_time = 1)
     all_channels, plans = [], []
     try:
         # Locate and click the zipcode link

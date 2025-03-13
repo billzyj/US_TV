@@ -44,6 +44,11 @@ def scrape_sling_tv(mode="headless"):
             except Exception as e:
                 LOGGER.info(f"Error extracting channels for {plan_name}: {e}")
 
+        # ✅ NEW: Update "Both" Plan
+        for channel, plans in all_channels.items():
+            if plans["Orange"] == "✔️" or plans["Blue"] == "✔️":
+                all_channels[channel]["Both"] = "✔️"
+
         # Convert dictionary to DataFrame
         df_sling_tv = pd.DataFrame.from_dict(all_channels, orient="index").reset_index()
         df_sling_tv.columns = ["Channel Name", "Orange", "Blue", "Both"]

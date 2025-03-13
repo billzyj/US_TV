@@ -96,7 +96,7 @@ def generate_summary_excel(directv_channels, directvstream_channels, dish_channe
         for plan in plan_list:
             summary_df[f"{provider_name} - {plan}"] = summary_df["Channel"].map(
                 lambda x: "✔️" if any(
-                    provider_channels.get(normalize_channel_name(alias, channel_aliases), {}).get(plan, "") in ["✔️", "✔"]
+                    provider_channels.get(normalize_channel_name(alias, channel_aliases), {}).get(plan, "") == "✔️"
                     for alias in channel_aliases.get(x, [x] if isinstance(channel_aliases.get(x, [x]), list) else [channel_aliases.get(x, [x])])
                 ) else ""
             )

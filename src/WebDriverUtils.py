@@ -96,12 +96,13 @@ def click_element(driver, element_locator, element_container = None):
         if element_container:
             element = element_container.find_element(element_locator[0], element_locator[1])
         else :
-            element = WebDriverWait(driver, 10).until(
+            element = WebDriverWait(driver, 20).until(
                 EC.element_to_be_clickable(element_locator)
             )
+        LOGGER.info("Element located")
         """Ensure the button is clickable by scrolling into view and clicking via JavaScript."""
         driver.execute_script("arguments[0].scrollIntoView();", element)  # Scroll to button
-        time.sleep(0.5)  # Give time for scrolling animation
+        time.sleep(1)  # Give time for scrolling animation
         driver.execute_script("arguments[0].click();", element)  # Click using JS
     except Exception as e:
         LOGGER.error(f"Error: {e}")
@@ -144,7 +145,7 @@ def set_zipcode(driver, zipcode, input_locator, submit_locator=None):
                 click_element(driver, submit_button)
             except:
                 LOGGER.info("Submit button not found or not needed.")
-
+        time.sleep(1)
         LOGGER.info(f"ZIP code {zipcode} set successfully.")
         return zip_input  # Ensure it returns the correct value
     
@@ -189,7 +190,6 @@ def extract_channel_data(driver, container_locator, channel_locator):
         LOGGER.info("channel container div located")
         # Extract all channel rows within channels_div
         channels = container.find_elements(channel_locator[0], channel_locator[1])
-        LOGGER.info("channels extracted")
         return channels
     except Exception as e:
         LOGGER.error(f"Error extracting channels: {e}")
@@ -199,9 +199,28 @@ def write_to_excel(df, output_file, sheet_name="Channels", index=False):
     """Writes a DataFrame to an Excel file with formatting."""
     with pd.ExcelWriter(output_file, engine="xlsxwriter") as writer:
         df.to_excel(writer, sheet_name=sheet_name, index = index)
+        
+        workbook = writer.book
         worksheet = writer.sheets[sheet_name]
-        worksheet.freeze_panes(1, 0)
+
+        # ✅ Freeze First Row & First Column
+        worksheet.freeze_panes(1, 1)
+
+       # ✅ Enable Wrap Text Formatting for All Cells
+        wrap_format = workbook.add_format({"text_wrap": True})
+
+        # ✅ Set Column Widths
+        worksheet.set_column(0, 0, 25, wrap_format)  # First column width
+        worksheet.set_column(1, len(df.columns) - 1, 10, wrap_format)  # Other columns width
+
+        # ✅ Wrap Text for First Row (Headers)
+        header_format = workbook.add_format({"bold": True, "text_wrap": True, "align": "center", "valign": "vcenter"})
+        for col_num, col_name in enumerate(df.columns):
+            worksheet.write(0, col_num, col_name, header_format)
+
+        # ✅ Apply Autofilter
         worksheet.autofilter(0, 0, len(df), len(df.columns) - 1)
+        
     LOGGER.info(f"Data saved to {output_file}")
 
 

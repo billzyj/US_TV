@@ -33,7 +33,7 @@ def scrape_fubo_tv(mode="headless"):
             driver.refresh()
 
             set_zipcode(driver, ZIPCODE, (By.ID, ZIP_INPUT_ID))
-
+            
             # Re-locate plan container to prevent stale element reference
             plan_container = WebDriverWait(driver, 10).until(
                 EC.presence_of_element_located((By.XPATH, f"//div[@data-testid='{plan_id}']"))

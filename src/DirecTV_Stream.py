@@ -57,8 +57,8 @@ def scrape_directv_stream(mode="headless"):
             channel_info = cells[0].find_elements(By.CLASS_NAME, CHANNEL_SPAN_CLASS)
             if len(channel_info) < 2:
                 continue  # Skip if information is missing
-            channel_name = channel_info[0].text.strip()
-            channel_number = channel_info[1].text.strip()
+            channel_name = channel_info[-2].text.strip()
+            channel_number = channel_info[-1].text.strip()
 
             # Extract plan availability (second to fifth td)
             plan_status = []
