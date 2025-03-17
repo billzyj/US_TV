@@ -1,4 +1,5 @@
 import logging
+import sys
 import os
 import time
 import random
@@ -19,21 +20,26 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 LOG_FILE = os.path.join(OUTPUT_DIR, "tv_scraper.log")
 def setup_logger():
-    """Setup logging for the project."""
-    logging.basicConfig(
-        filename=LOG_FILE,  # Log output to a file
-        filemode="a",  # Append logs to the file
-        format="%(asctime)s - %(levelname)s - %(message)s",  # Log format
-        level=logging.DEBUG  # Capture all logs (DEBUG and above)
-    )
+    """Setup logging with UTF-8 encoding and prevent duplicate handlers."""
     logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
 
-    # Also log to console
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.INFO)  # Only show INFO+ logs in console
-    formatter = logging.Formatter("%(levelname)s - %(message)s")
-    console_handler.setFormatter(formatter)
+    # Remove any existing handlers (prevents duplicate logging)
+    logger.handlers.clear()
+
+    # Console Handler
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(logging.INFO)  # Console shows INFO+
+    console_formatter = logging.Formatter("%(levelname)s - %(message)s")
+    console_handler.setFormatter(console_formatter)
     logger.addHandler(console_handler)
+
+    # File Handler (Force UTF-8 Encoding)
+    file_handler = logging.FileHandler(LOG_FILE, 'a', encoding="utf-8")
+    file_handler.setLevel(logging.INFO)  # Log all levels to file
+    file_formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    file_handler.setFormatter(file_formatter)
+    logger.addHandler(file_handler)
 
     return logger
 LOGGER = setup_logger() # Initialize logger

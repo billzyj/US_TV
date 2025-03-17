@@ -1,3 +1,4 @@
+import json
 import os
 import pandas as pd
 from src.DirecTV import scrape_directv
@@ -22,13 +23,14 @@ def get_channel_alias(input_file):
         for alias in aliases:
             channel_aliases[alias] = canonical_name  # Map alias to canonical name
 
-    LOGGER.info("Loaded channel aliases")
+    LOGGER.info(f"Loaded {len(channel_aliases)} channel aliases")
     return channel_aliases
 
 def normalize_channel_name(channel_name, channel_aliases):
     """Normalize and map channel names using alias mapping."""
     channel_name = channel_name.strip().lower()
-    return channel_aliases.get(channel_name, channel_name)  # Return canonical name if alias exists
+    normalized = channel_aliases.get(channel_name, channel_name)
+    return normalized
 
 def generate_summary_excel(directv_channels, directvstream_channels, dish_channels, fubo_channels,
                            hulu_channels, sling_channels, youtube_channels, 
@@ -53,7 +55,7 @@ def generate_summary_excel(directv_channels, directvstream_channels, dish_channe
 
     LOGGER.info("Generating consolidated channel list...")
     channel_aliases = get_channel_alias(DATA_FILE)
-
+    LOGGER.info(channel_aliases)
      # Collect all unique channel names
     all_channels = set()
 
@@ -65,7 +67,7 @@ def generate_summary_excel(directv_channels, directvstream_channels, dish_channe
     all_channels.update({normalize_channel_name(ch, channel_aliases) for ch in sling_channels.keys()})
     all_channels.update({normalize_channel_name(ch, channel_aliases) for ch in hulu_channels})
     all_channels.update({normalize_channel_name(ch, channel_aliases) for ch in youtube_channels})
-
+    LOGGER.info(f"All %d channel names: %s", len(all_channels), str(sorted(all_channels)))
 
     # Initialize DataFrame with channels as rows
     summary_df = pd.DataFrame({"Channel": sorted(all_channels)})
@@ -91,13 +93,22 @@ def generate_summary_excel(directv_channels, directvstream_channels, dish_channe
     # Function to merge provider-specific data
     def merge_provider_data(provider_channels, provider_name, plan_list):
         """Merge provider-specific channel data into the summary."""
-        provider_channels = {normalize_channel_name(k, channel_aliases): v for k, v in provider_channels.items()}  # Normalize keys
+        provider_channels = {
+            normalize_channel_name(k, channel_aliases): v for k, v in provider_channels.items()
+        }  # Normalize keys
+        LOGGER.info(f"Processed {provider_name} Channels: {json.dumps(provider_channels, indent=2, ensure_ascii=False)}")
 
         for plan in plan_list:
             summary_df[f"{provider_name} - {plan}"] = summary_df["Channel"].map(
                 lambda x: "✔️" if any(
-                    provider_channels.get(normalize_channel_name(alias, channel_aliases), {}).get(plan, "") == "✔️"
-                    for alias in channel_aliases.get(x, [x] if isinstance(channel_aliases.get(x, [x]), list) else [channel_aliases.get(x, [x])])
+                    provider_channels.get(
+                        normalize_channel_name(alias, channel_aliases), {}
+                    ).get(plan, "").strip() == "✔️"
+                    for alias in (
+                        channel_aliases.get(x, [x]) if isinstance(channel_aliases.get(x, [x]), list) 
+                        else [channel_aliases.get(x, [x])]
+                    )
+                    if isinstance(alias, str) and normalize_channel_name(alias, channel_aliases) in provider_channels
                 ) else ""
             )
 
