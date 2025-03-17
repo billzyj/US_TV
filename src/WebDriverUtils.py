@@ -15,7 +15,7 @@ from selenium.webdriver.common.action_chains import ActionChains
 
 # Shared variables
 ZIPCODE = "79423"
-OUTPUT_DIR = "./output"
+OUTPUT_DIR = "./output/" + ZIPCODE
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 LOG_FILE = os.path.join(OUTPUT_DIR, "tv_scraper.log")
