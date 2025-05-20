@@ -20,7 +20,7 @@ def scrape_sling_tv(mode="headless"):
     try:
         # Locate and click the "Compare Plans" button
         LOGGER.info("Locating Compare Plans button...")
-        click_element(driver, (By.XPATH, "//button[.//p[contains(text(), 'Compare Plans')]]"))
+        click_element(driver, (By.XPATH, "//a[.//p[contains(text(), 'Compare Plans')]]"))
         LOGGER.info("Opened Compare Plans window...")
         
         set_zipcode(driver, ZIPCODE, (By.XPATH, "//input[@data-reference-id='billing-form-zip-field']"))
