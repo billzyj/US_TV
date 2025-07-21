@@ -259,7 +259,7 @@ def set_zipcode(driver: WebDriver, zipcode: str, input_locator: tuple, submit_lo
         LOGGER.error(f"Error setting ZIP code: {e}")
         return None
 
-def smooth_scroll_to_bottom(driver: WebDriver, scroll_step: int = 1000, wait_time: float = 0.1) -> None:
+def smooth_scroll_to_bottom(driver: WebDriver, scroll_step: int = 500, wait_time: float = 0.4) -> None:
     """Smoothly scroll from the top to the bottom of the page.
 
     Parameters:
@@ -306,7 +306,7 @@ def extract_channel_data(driver: WebDriver, container_locator: tuple, channel_lo
         LOGGER.error(f"Error extracting channels: {e}")
         return []
 
-def write_to_excel(df, output_file, sheet_name="Sheet1", index=True):
+def write_to_excel(df, output_file, sheet_name="Sheet1", index=False):
     """Write DataFrame to Excel file."""
     try:
         # Ensure file has .xlsx extension
@@ -377,7 +377,7 @@ def move_mouse_randomly(driver: WebDriver) -> None:
         actions.move_by_offset(x_offset, y_offset).perform()
         time.sleep(random.uniform(0.1, 0.5))
 
-def parallel_scrape(scrapers):
+def parallel_scrape(scrapers, max_workers = 2):
     """Run multiple scrapers in parallel using concurrent.futures.
 
     Parameters:
@@ -391,7 +391,7 @@ def parallel_scrape(scrapers):
     """
     results = []
     try:
-        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:  # Limit concurrent scrapers
+        with concurrent.futures.ThreadPoolExecutor(max_workers) as executor:  # Limit concurrent scrapers
             futures = [executor.submit(scraper, mode) for scraper, mode in scrapers]
             for future in concurrent.futures.as_completed(futures):
                 try:

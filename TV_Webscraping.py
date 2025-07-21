@@ -177,7 +177,7 @@ def run_scrapers(mode, providers=None):
         scrapers = [(scraper, mode) for scraper in SCRAPERS.values()]
     
     # Run scrapers in parallel and collect results
-    results = parallel_scrape(scrapers)
+    results = parallel_scrape(scrapers, max_workers=2)
     
     LOGGER.info(f"{len(results)} TV Providers Results returned.")
     # Create results dictionary
@@ -189,8 +189,8 @@ def run_scrapers(mode, providers=None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="TV Channel Web Scraper")
-    parser.add_argument('--mode', choices=['headless', 'gui'], default='headless', 
-                      help='WebDriver mode: headless or gui (default: headless)')
+    parser.add_argument('--mode', choices=['headless', 'gui'], default='gui', 
+                      help='WebDriver mode: headless or gui (default: gui)')
     parser.add_argument('--output', choices=['excel', 'csv'], default='excel',
                       help='Output format: excel or csv (default: excel)')
     parser.add_argument('--providers', nargs='+', choices=list(SCRAPERS.keys()),

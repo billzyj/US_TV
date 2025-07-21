@@ -48,8 +48,8 @@ Ensure you have the following installed:
 
 2. Set up a virtual environment (optional but recommended):
    ```sh
-   python -m venv venv
-   source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
+   python -m venv .venv
+   source .venv/bin/activate  # On Windows, use `.venv\Scripts\activate`
    ```
 
 3. Install dependencies:

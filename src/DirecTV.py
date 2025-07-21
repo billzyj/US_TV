@@ -9,16 +9,13 @@ from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, LOGGER, load_page, click_ele
 DIRECTV_URL = "https://www.directv.com/channel-lineup/"
 SET_ZIP_LINK_CLASS = "mui-style-1c87emg"
 ZIP_INPUT_ID = "zipcode-search"
-SET_ZIP_LINK_BUTTON_ARIA_LABEL = "Search ZIP Code"
+SET_ZIP_LINK_BUTTON_ARIA_LABEL = "Update ZIP Code for Local & Regional Channels"
 
-CHANNELS_TABLE_BODY_ID = "tableBody"
-CHANNELS_TABLE_ROW_ID = "tableBodyRow"
-TOGGLE_BUTTON_CLASS = "mui-style-1ii9cd9"
-
-CHANNELS_TABLE_HEADER_ID = "tableHeader"
+CHANNELS_TABLE_HEADER_ID = "ChannelLineup-PackagesHeader"
 PLAN_NAME_CLASS = "MuiTypography-root"
-CHANNELS_DIV_ID = "nestedTableBody"
-TABLE_ROW_ID = "nestedTableRow"
+CHANNELS_TABLE_BODY_ID = "tableBody"
+CHANNELS_TABLE_ROW_CLASS = "mui-style-1ybie8h"
+
 OUTPUT_FILE = os.path.join(OUTPUT_DIR, "DirecTVChannelList.xlsx")
 
 def scrape_directv(mode="headless"):
@@ -42,7 +39,7 @@ def scrape_directv(mode="headless"):
         LOGGER.info(f"Header located")
         # Extract plan plans from table header dynamically
 
-        plan_headers = channels_header.find_elements(By.TAG_NAME, "th")
+        plan_headers = channels_header.find_elements(By.TAG_NAME, "td")
         for header in plan_headers:
             plan_name_elem = header.find_elements(By.CLASS_NAME, PLAN_NAME_CLASS)
             if plan_name_elem:
@@ -51,28 +48,22 @@ def scrape_directv(mode="headless"):
             plans.pop(0)
         LOGGER.info(f"Extracted plans: {plans}")
 
-        channels = extract_channel_data(driver, (By.ID, CHANNELS_DIV_ID), (By.ID, TABLE_ROW_ID))
+        channels = extract_channel_data(driver, (By.ID, CHANNELS_TABLE_BODY_ID), (By.CLASS_NAME, CHANNELS_TABLE_ROW_CLASS))
         LOGGER.info(f"Extracted {len(channels)} channels for DirecTV.")
-        
-        # Extract Channel Name, Number, and Availability in Plans
-        LOGGER.info(len(channels))
+
         for channel in channels:
-            cells = channel.find_elements(By.TAG_NAME, "td")
+            # The first child div contains channel info
+            info_div = channel.find_elements(By.XPATH, './div')[0]
+            channel_name = info_div.find_elements(By.TAG_NAME, "p")[0].text.strip()
+            channel_number = info_div.find_elements(By.TAG_NAME, "p")[1].text.strip()
 
-            # Extract channel name and number (inside first td)
-            channel_info = cells[0].find_elements(By.TAG_NAME, "p")
-            if len(channel_info) < 2:
-                continue  # Skip if information is missing
-            channel_name = channel_info[0].text.strip()
-            channel_number = channel_info[1].text.strip()
-
-            # Extract plan availability (second to fifth td)
+            # The next divs correspond to plan columns
             plan_status = []
             for i in range(1, len(plans) + 1):
-                included = "✔️" if cells[i].find_elements(By.TAG_NAME, "span") else ""
+                plan_div = channel.find_elements(By.XPATH, f'./div[{i+1}]')[0]
+                included = "✔️" if plan_div.find_elements(By.TAG_NAME, "span") and plan_div.find_elements(By.TAG_NAME, "img") else ""
                 plan_status.append(included)
 
-            # Store data
             all_channels.append([channel_name, channel_number] + plan_status)
 
         # Convert to DataFrame

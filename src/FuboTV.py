@@ -6,12 +6,12 @@ from selenium.webdriver.support import expected_conditions as EC
 from src.WebDriverUtils import ZIPCODE, OUTPUT_DIR, LOGGER, load_page, click_element, set_zipcode, extract_channel_data, write_to_excel
 
 # Variables for flexibility
-FUBO_URL = "https://fubo.tv/welcome"
-ZIP_INPUT_ID = "react-aria-5"
+FUBO_URL = "https://www.fubo.tv/welcome/plans"
+ZIP_INPUT_NAME = "zip-input"
 PLAN_CONTAINERS = {
-#    "Essential": "package-container-us-essential-mo-v1",
     "Pro": "package-container-us-pro",
     "Elite": "package-container-us-elite-v2",
+    "Deluxe": "package-container-us-deluxe-mo-v1",
 }
 LEARN_MORE_BUTTON_CLASS = "details-button"
 SHOW_MORE_BUTTON_CLASS = "css-t5itrl"
@@ -32,7 +32,7 @@ def scrape_fubo_tv(mode="headless"):
             # Reload the DOM to prevent stale element reference
             driver.refresh()
 
-            set_zipcode(driver, ZIPCODE, (By.ID, ZIP_INPUT_ID))
+            #set_zipcode(driver, ZIPCODE, (By.NAME, ZIP_INPUT_NAME))
             
             # Re-locate plan container to prevent stale element reference
             plan_container = WebDriverWait(driver, 10).until(
@@ -77,7 +77,7 @@ def scrape_fubo_tv(mode="headless"):
         df_fubo_tv.columns = ["Channel Name"] + list(PLAN_CONTAINERS.keys())
 
         # Save to Excel in a single sheet
-        write_to_excel(df_fubo_tv, OUTPUT_FILE, sheet_name="FuboTV Channels")
+        write_to_excel(df_fubo_tv, OUTPUT_FILE, sheet_name="FuboTV Channels", index=False)
     
     except Exception as e:
         LOGGER.error(f"ERROR: {e}")
